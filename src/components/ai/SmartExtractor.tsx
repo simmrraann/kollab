@@ -24,7 +24,11 @@ export const SmartExtractor = () => {
     setResult({
       brand: 'Glossier',
       deliverable: 'Instagram Reel',
+<<<<<<< HEAD
       amount: '$2,500',
+=======
+      amount: '₹2,500',
+>>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
       date: 'January 25, 2024',
     });
     
@@ -49,7 +53,11 @@ export const SmartExtractor = () => {
         placeholder="Paste your Instagram DM, email, or chat conversation here...
 
 Example:
+<<<<<<< HEAD
 Hey! We'd love to work with you on a sponsored reel for our new product launch. We're offering $2,500 for one reel + 3 stories, posting date would be January 25th. Let us know if you're interested!"
+=======
+Hey! We'd love to work with you on a sponsored reel for our new product launch. We're offering ₹2,500 for one reel + 3 stories, posting date would be January 25th. Let us know if you're interested!"
+>>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
         value={input}
         onChange={(e) => setInput(e.target.value)}
         className="min-h-[150px] soft-input resize-none mb-4"

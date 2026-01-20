@@ -1,4 +1,9 @@
 import { useState } from 'react';
+<<<<<<< HEAD
+=======
+import { supabase } from '@/lib/supabase';
+
+>>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,6 +48,7 @@ const initialFormData: CollabFormData = {
 
 interface CollabFormProps {
   onClose?: () => void;
+<<<<<<< HEAD
   onSubmit?: (data: CollabFormData) => void;
 }
 
@@ -53,6 +59,54 @@ export const CollabForm = ({ onClose, onSubmit }: CollabFormProps) => {
     e.preventDefault();
     onSubmit?.(formData);
     setFormData(initialFormData);
+=======
+}
+
+export const CollabForm = ({ onClose }: CollabFormProps) => {
+  const [formData, setFormData] = useState<CollabFormData>(initialFormData);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    // 1️⃣ Get logged-in user
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (!user || userError) {
+      alert('Please login again');
+      setLoading(false);
+      return;
+    }
+
+    // 2️⃣ Insert into Supabase
+    const { error } = await supabase.from('collaborations').insert({
+      user_id: user.id,
+      brand_name: formData.brandName,
+      platform: formData.platform,
+      deliverable: formData.deliverable,
+      amount: Number(formData.paymentAmount), // ₹ stored as number
+      payment_status: formData.paymentStatus,
+      posting_date: formData.postingDate || null,
+      payment_due_date: formData.paymentDueDate || null,
+      notes: formData.notes,
+    });
+
+    if (error) {
+      console.error(error);
+      alert('Error saving collaboration');
+      setLoading(false);
+      return;
+    }
+
+    // 3️⃣ Success
+    setFormData(initialFormData);
+    setLoading(false);
+    onClose?.();
+>>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
   };
 
   const updateField = (field: keyof CollabFormData, value: string | boolean) => {
@@ -73,12 +127,17 @@ export const CollabForm = ({ onClose, onSubmit }: CollabFormProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Brand Name */}
         <div className="space-y-2">
+<<<<<<< HEAD
           <Label htmlFor="brandName" className="text-sm font-medium">
             Brand Name
           </Label>
           <Input
             id="brandName"
             placeholder="e.g., Glossier"
+=======
+          <Label>Brand Name</Label>
+          <Input
+>>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
             value={formData.brandName}
             onChange={(e) => updateField('brandName', e.target.value)}
             className="soft-input"
@@ -87,9 +146,13 @@ export const CollabForm = ({ onClose, onSubmit }: CollabFormProps) => {
 
         {/* Platform */}
         <div className="space-y-2">
+<<<<<<< HEAD
           <Label htmlFor="platform" className="text-sm font-medium">
             Platform
           </Label>
+=======
+          <Label>Platform</Label>
+>>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
           <Select value={formData.platform} onValueChange={(v) => updateField('platform', v)}>
             <SelectTrigger className="soft-input">
               <SelectValue placeholder="Select platform" />
@@ -105,9 +168,13 @@ export const CollabForm = ({ onClose, onSubmit }: CollabFormProps) => {
 
         {/* Deliverable */}
         <div className="space-y-2">
+<<<<<<< HEAD
           <Label htmlFor="deliverable" className="text-sm font-medium">
             Deliverables
           </Label>
+=======
+          <Label>Deliverable</Label>
+>>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
           <Select value={formData.deliverable} onValueChange={(v) => updateField('deliverable', v)}>
             <SelectTrigger className="soft-input">
               <SelectValue placeholder="Select deliverable" />
@@ -116,14 +183,19 @@ export const CollabForm = ({ onClose, onSubmit }: CollabFormProps) => {
               <SelectItem value="reel">Reel</SelectItem>
               <SelectItem value="story">Story</SelectItem>
               <SelectItem value="post">Post</SelectItem>
+<<<<<<< HEAD
               <SelectItem value="carousel">Carousel</SelectItem>
               <SelectItem value="video">YouTube Video</SelectItem>
               <SelectItem value="integration">Integration</SelectItem>
               <SelectItem value="custom">Custom</SelectItem>
+=======
+              <SelectItem value="video">Video</SelectItem>
+>>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
             </SelectContent>
           </Select>
         </div>
 
+<<<<<<< HEAD
         {/* Recording Date */}
         <div className="space-y-2">
           <Label htmlFor="recordingDate" className="text-sm font-medium">
@@ -246,15 +318,35 @@ export const CollabForm = ({ onClose, onSubmit }: CollabFormProps) => {
       </div>
 
       {/* Actions */}
+=======
+        {/* Payment Amount */}
+        <div className="space-y-2">
+          <Label>Payment Amount (₹)</Label>
+          <Input
+            type="number"
+            value={formData.paymentAmount}
+            onChange={(e) => updateField('paymentAmount', e.target.value)}
+            className="soft-input"
+          />
+        </div>
+      </div>
+
+>>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
       <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
         {onClose && (
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
         )}
+<<<<<<< HEAD
         <Button type="submit" className="btn-calm">
           <Plus className="w-4 h-4 mr-2" />
           Add Collaboration
+=======
+        <Button type="submit" className="btn-calm" disabled={loading}>
+          <Plus className="w-4 h-4 mr-2" />
+          {loading ? 'Saving...' : 'Add Collaboration'}
+>>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
         </Button>
       </div>
     </form>

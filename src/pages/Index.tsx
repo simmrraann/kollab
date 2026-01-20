@@ -26,7 +26,11 @@ const Index = () => {
         />
         <StatsCard
           title="Pending Payments"
+<<<<<<< HEAD
           value="$18.3k"
+=======
+          value="₹18,300"
+>>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
           subtitle="6 invoices pending"
           icon={<DollarSign className="w-5 h-5" />}
           variant="default"
