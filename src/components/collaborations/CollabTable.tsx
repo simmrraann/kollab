@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase'; 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { Search, Filter, MoreHorizontal, Instagram, Youtube, Globe } from 'lucide-react';
+import { Search, Filter, MoreHorizontal, Instagram, Youtube, Globe, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,104 +20,70 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+// 1. Define the Real Database Shape
 interface Collaboration {
   id: string;
-  brand: string;
-  platform: 'instagram' | 'youtube' | 'other';
+  brand_name: string; 
+  platform: string;
   deliverable: string;
-  recordingDate: string;
-  postingDate: string;
+  posting_date: string;
   amount: number;
-  status: 'pending' | 'paid' | 'delayed';
-  paymentDueDate: string;
-  onboardingReceived: boolean;
+  payment_status: string;
+  payment_due_date: string;
+  onboarding_received: boolean;
 }
 
-const mockData: Collaboration[] = [
-  {
-    id: '1',
-    brand: 'Glossier',
-    platform: 'instagram',
-    deliverable: 'Reel + Stories',
-    recordingDate: '2024-01-18',
-    postingDate: '2024-01-20',
-    amount: 2500,
-    status: 'pending',
-    paymentDueDate: '2024-02-01',
-    onboardingReceived: true,
-  },
-  {
-    id: '2',
-    brand: 'Nike',
-    platform: 'youtube',
-    deliverable: 'Dedicated Video',
-    recordingDate: '2024-01-10',
-    postingDate: '2024-01-18',
-    amount: 8000,
-    status: 'paid',
-    paymentDueDate: '2024-01-25',
-    onboardingReceived: true,
-  },
-  {
-    id: '3',
-    brand: 'Notion',
-    platform: 'instagram',
-    deliverable: 'Carousel Post',
-    recordingDate: '2024-01-08',
-    postingDate: '2024-01-15',
-    amount: 1800,
-    status: 'delayed',
-    paymentDueDate: '2024-01-20',
-    onboardingReceived: false,
-  },
-  {
-    id: '4',
-    brand: 'Skillshare',
-    platform: 'youtube',
-    deliverable: 'Integration',
-    recordingDate: '2024-01-19',
-    postingDate: '2024-01-22',
-    amount: 3500,
-    status: 'pending',
-    paymentDueDate: '2024-02-05',
-    onboardingReceived: true,
-  },
-  {
-    id: '5',
-    brand: 'Figma',
-    platform: 'instagram',
-    deliverable: 'Post + Story',
-    recordingDate: '2024-01-20',
-    postingDate: '2024-01-25',
-    amount: 2200,
-    status: 'pending',
-    paymentDueDate: '2024-02-10',
-    onboardingReceived: true,
-  },
-];
-
 const PlatformIcon = ({ platform }: { platform: string }) => {
-  switch (platform) {
-    case 'instagram':
-      return <Instagram className="w-4 h-4" />;
-    case 'youtube':
-      return <Youtube className="w-4 h-4" />;
-    default:
-      return <Globe className="w-4 h-4" />;
-  }
+  const p = platform ? platform.toLowerCase() : "";
+  if (p.includes('instagram')) return <Instagram className="w-4 h-4" />;
+  if (p.includes('youtube')) return <Youtube className="w-4 h-4" />;
+  return <Globe className="w-4 h-4" />;
 };
 
-const statusStyles = {
-  pending: 'bg-warning/10 text-warning border-warning/20',
-  paid: 'bg-success/10 text-success border-success/20',
-  delayed: 'bg-destructive/10 text-destructive border-destructive/20',
+const statusStyles: Record<string, string> = {
+  Pending: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
+  Paid: 'bg-green-500/10 text-green-600 border-green-500/20',
+  Delayed: 'bg-red-500/10 text-red-600 border-red-500/20',
+  pending: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20', // fallback for lowercase
+  paid: 'bg-green-500/10 text-green-600 border-green-500/20',
+  delayed: 'bg-red-500/10 text-red-600 border-red-500/20',
 };
 
-export const CollabTable = () => {
+// 2. Accept keyProp to know when to refresh
+export const CollabTable = ({ keyProp }: { keyProp: number }) => {
+  const [collabs, setCollabs] = useState<Collaboration[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredData = mockData.filter((collab) =>
-    collab.brand.toLowerCase().includes(searchQuery.toLowerCase())
+  // 3. Fetch Real Data
+  useEffect(() => {
+    fetchCollaborations();
+  }, [keyProp]); // Run this whenever keyProp changes (after you add a new collab)
+
+  const fetchCollaborations = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('collaborations')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching collabs:', error);
+    } else {
+      setCollabs(data || []);
+    }
+    setLoading(false);
+  };
+
+  const deleteCollab = async (id: string) => {
+    if(!confirm("Are you sure you want to delete this?")) return;
+    
+    const { error } = await supabase.from('collaborations').delete().eq('id', id);
+    if (!error) fetchCollaborations(); 
+  };
+
+  const filteredData = collabs.filter((collab) =>
+    collab.brand_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -155,13 +122,24 @@ export const CollabTable = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.map((collab, index) => (
+            {loading ? (
+                 <TableRow>
+                    <TableCell colSpan={9} className="text-center h-24">Loading...</TableCell>
+                 </TableRow>
+            ) : filteredData.length === 0 ? (
+                <TableRow>
+                    <TableCell colSpan={9} className="text-center h-24 text-muted-foreground">
+                        No collaborations found. Add one above!
+                    </TableCell>
+                </TableRow>
+            ) : (
+                filteredData.map((collab, index) => (
               <TableRow
                 key={collab.id}
                 className="animate-fade-in"
                 style={{ animationDelay: `${index * 30}ms` }}
               >
-                <TableCell className="font-medium">{collab.brand}</TableCell>
+                <TableCell className="font-medium">{collab.brand_name}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center">
@@ -171,20 +149,20 @@ export const CollabTable = () => {
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{collab.deliverable}</TableCell>
-                <TableCell>{collab.postingDate}</TableCell>
-                <TableCell className="font-semibold">${collab.amount.toLocaleString()}</TableCell>
+                <TableCell>{collab.posting_date || '-'}</TableCell>
+                <TableCell className="font-semibold">₹{collab.amount ? collab.amount.toLocaleString() : 0}</TableCell>
                 <TableCell>
                   <Badge
                     variant="outline"
-                    className={cn('capitalize text-xs', statusStyles[collab.status])}
+                    className={cn('capitalize text-xs', statusStyles[collab.payment_status] || statusStyles['Pending'])}
                   >
-                    {collab.status}
+                    {collab.payment_status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{collab.paymentDueDate}</TableCell>
+                <TableCell className="text-muted-foreground">{collab.payment_due_date || '-'}</TableCell>
                 <TableCell>
-                  <Badge variant={collab.onboardingReceived ? 'default' : 'secondary'} className="text-xs">
-                    {collab.onboardingReceived ? 'Yes' : 'No'}
+                  <Badge variant={collab.onboarding_received ? 'default' : 'secondary'} className="text-xs">
+                    {collab.onboarding_received ? 'Yes' : 'No'}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -195,23 +173,17 @@ export const CollabTable = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => deleteCollab(collab.id)} className="text-destructive focus:text-destructive cursor-pointer">
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
               </TableRow>
-            ))}
+            )))}
           </TableBody>
         </Table>
-      </div>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-border flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Showing {filteredData.length} of {mockData.length} collaborations
-        </p>
       </div>
     </div>
   );

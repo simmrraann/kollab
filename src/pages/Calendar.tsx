@@ -1,90 +1,246 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight, X, Loader2, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner'; 
+
+// --- TYPES ---
+interface CalendarEvent {
+  id: string;
+  collabId: string; // Link back to the main collab
+  title: string;
+  date: Date;
+  type: 'posting' | 'payment';
+  platform: string;
+  status: string;
+  amount: number;
+}
+
+// --- CREATIVE STYLING ---
+const getPlatformStyle = (platform: string, type: 'posting' | 'payment') => {
+  const p = platform.toLowerCase();
+  
+  // Base style for the chip
+  const base = "text-[10px] px-1.5 py-1 rounded truncate font-medium shadow-sm border border-white/10 transition-transform hover:scale-105";
+
+  // If it's a payment event, make it Green regardless of platform (Money is Money!)
+  if (type === 'payment') {
+    return cn(base, "bg-gradient-to-r from-emerald-500 to-green-600 text-white");
+  }
+
+  // Platform specific gradients for Posting
+  if (p.includes('instagram')) return cn(base, "bg-gradient-to-r from-purple-500 to-pink-500 text-white");
+  if (p.includes('youtube')) return cn(base, "bg-gradient-to-r from-red-500 to-red-700 text-white");
+  if (p.includes('tiktok')) return cn(base, "bg-gradient-to-r from-slate-900 to-cyan-900 text-cyan-50");
+  
+  // Default
+  return cn(base, "bg-secondary text-secondary-foreground");
+};
 
 const Calendar = () => {
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [collaborations, setCollaborations] = useState<Record<string, any[]>>({});
+  const [loading, setLoading] = useState(true);
+  
+  // We store "Events" which are processed derived from Collaborations
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+
+  // Form State
   const [formData, setFormData] = useState({
     brand: '',
     platform: 'Instagram',
-    type: '',
+    deliverable: '',
     amount: '',
     status: 'Pending',
-    notes: ''
   });
+  const [saving, setSaving] = useState(false);
 
+  // --- 1. FETCH DATA ---
+  useEffect(() => {
+    fetchCalendarData();
+  }, [user]); // Re-fetch if user changes
+
+  const fetchCalendarData = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.from('collaborations').select('*');
+      
+      if (error) throw error;
+
+      // Transform Database Rows into Calendar Events
+      const processedEvents: CalendarEvent[] = [];
+
+      data?.forEach((collab) => {
+        // 1. Add Posting Date Event
+        if (collab.posting_date) {
+          processedEvents.push({
+            id: `${collab.id}-post`,
+            collabId: collab.id,
+            title: collab.brand_name,
+            date: new Date(collab.posting_date),
+            type: 'posting',
+            platform: collab.platform,
+            status: collab.payment_status,
+            amount: collab.amount
+          });
+        }
+        // 2. Add Payment Due Date Event
+        if (collab.payment_due_date) {
+           processedEvents.push({
+            id: `${collab.id}-pay`,
+            collabId: collab.id,
+            title: `Pay: ${collab.brand_name}`,
+            date: new Date(collab.payment_due_date),
+            type: 'payment',
+            platform: collab.platform,
+            status: collab.payment_status,
+            amount: collab.amount
+          });
+        }
+      });
+
+      setEvents(processedEvents);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- 2. SAVE DATA ---
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDate || !user) return;
+    
+    setSaving(true);
+
+    // Prepare payload. 
+    // Note: Since they clicked a specific date on the calendar, 
+    // we assume that is the Posting Date.
+    const payload = {
+      user_id: user.id,
+      brand_name: formData.brand,
+      platform: formData.platform,
+      deliverable: formData.deliverable,
+      amount: Number(formData.amount),
+      payment_status: formData.status,
+      posting_date: selectedDate.toISOString().split('T')[0], // YYYY-MM-DD
+      // Default payment due date to 30 days later (optional smart feature)
+      payment_due_date: new Date(selectedDate.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+    };
+
+    const { error } = await supabase.from('collaborations').insert(payload);
+
+    if (error) {
+      toast.error("Failed to save collaboration");
+    } else {
+      toast.success("Collaboration added to calendar!");
+      setIsModalOpen(false);
+      setFormData({ brand: '', platform: 'Instagram', deliverable: '', amount: '', status: 'Pending' });
+      fetchCalendarData(); // Refresh calendar
+    }
+    setSaving(false);
+  };
+
+
+  // --- CALENDAR LOGIC ---
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
 
   const handleDateClick = (day: number) => {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     setSelectedDate(date);
-    setFormData({ brand: '', platform: 'Instagram', type: '', amount: '', status: 'Pending', notes: '' });
     setIsModalOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedDate) return;
-    
-    const dateKey = selectedDate.toDateString();
-    const newCollab = { ...formData, id: Date.now() };
-    
-    setCollaborations(prev => ({
-      ...prev,
-      [dateKey]: [...(prev[dateKey] || []), newCollab]
-    }));
-    
-    setIsModalOpen(false);
-  };
-
-  const formatCurrency = (amount: string) => {
-    const num = parseFloat(amount);
-    if (isNaN(num)) return '';
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num);
+  const getEventsForDay = (day: number) => {
+    return events.filter(e => {
+        return e.date.getDate() === day && 
+               e.date.getMonth() === currentDate.getMonth() && 
+               e.date.getFullYear() === currentDate.getFullYear();
+    });
   };
 
   return (
-    <AppLayout title="Calendar" subtitle="Visualize your collaboration timeline.">
-      <div className="glass-card p-6 rounded-xl">
-        {/* Calendar Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold gradient-text">
-            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </h2>
+    <AppLayout title="Calendar" subtitle="Visualize your content & income timeline.">
+      <div className="glass-card p-6 rounded-xl animate-fade-in">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-foreground">
+                {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </h2>
+            <p className="text-muted-foreground text-sm mt-1">
+                {events.filter(e => e.date.getMonth() === currentDate.getMonth()).length} events this month
+            </p>
+          </div>
+          
           <div className="flex gap-2">
-            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))} className="p-2 hover:bg-secondary rounded-lg transition-colors"><ChevronLeft className="w-5 h-5" /></button>
-            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))} className="p-2 hover:bg-secondary rounded-lg transition-colors"><ChevronRight className="w-5 h-5" /></button>
+            <Button variant="outline" size="icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}>
+                <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}>
+                <ChevronRight className="w-4 h-4" />
+            </Button>
           </div>
         </div>
 
-        {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-4 mb-4 text-center text-sm font-medium text-muted-foreground">
+        {/* Legend */}
+        <div className="flex gap-4 mb-6 text-xs text-muted-foreground">
+             <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-purple-500"></div> Instagram</div>
+             <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-600"></div> YouTube</div>
+             <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Payment Due</div>
+        </div>
+
+        {/* Grid */}
+        <div className="grid grid-cols-7 gap-4 mb-4 text-center text-sm font-medium text-muted-foreground uppercase tracking-wider">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day}>{day}</div>)}
         </div>
+        
         <div className="grid grid-cols-7 gap-4">
-          {Array.from({ length: firstDayOfMonth }).map((_, i) => <div key={`empty-${i}`} />)}
+          {/* Empty Slots */}
+          {Array.from({ length: firstDayOfMonth }).map((_, i) => <div key={`empty-${i}`} className="min-h-[120px] bg-secondary/10 rounded-xl opacity-50" />)}
+          
+          {/* Days */}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
-            const dateKey = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toDateString();
-            const dayCollabs = collaborations[dateKey] || [];
+            const dayEvents = getEventsForDay(day);
+            const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth();
             
             return (
               <div 
                 key={day} 
                 onClick={() => handleDateClick(day)}
-                className="min-h-[100px] p-3 rounded-xl border bg-card/50 hover:bg-secondary/50 transition-all cursor-pointer relative group"
+                className={cn(
+                    "min-h-[120px] p-3 rounded-xl border transition-all cursor-pointer relative group flex flex-col gap-1",
+                    isToday ? "border-primary bg-primary/5 shadow-sm" : "bg-card hover:border-primary/50"
+                )}
               >
-                <span className="text-sm font-medium">{day}</span>
-                <div className="mt-2 space-y-1">
-                  {dayCollabs.map((collab, idx) => (
-                    <div key={idx} className="text-[10px] truncate px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                      {collab.brand}
+                <span className={cn(
+                    "text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full mb-1",
+                    isToday ? "bg-primary text-white" : "text-muted-foreground group-hover:text-foreground"
+                )}>
+                    {day}
+                </span>
+
+                {/* Event Chips */}
+                <div className="flex flex-col gap-1.5 overflow-y-auto custom-scrollbar max-h-[80px]">
+                  {dayEvents.map((event, idx) => (
+                    <div key={idx} className={getPlatformStyle(event.platform, event.type)}>
+                      {event.title}
                     </div>
                   ))}
+                </div>
+                
+                {/* Add Hint on Hover */}
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Plus className="w-4 h-4 text-muted-foreground" />
                 </div>
               </div>
             );
@@ -92,50 +248,68 @@ const Calendar = () => {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* --- ADD EVENT MODAL --- */}
       {isModalOpen && selectedDate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="glass-card w-full max-w-md p-6 rounded-xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-background border w-full max-w-md p-6 rounded-2xl shadow-2xl scale-100">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold">
-                {selectedDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
-            </div>
-
-            {/* Existing List */}
-            <div className="mb-6 space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
-              {(collaborations[selectedDate.toDateString()] || []).map((c) => (
-                <div key={c.id} className="flex justify-between items-center p-2 rounded-lg bg-secondary/50 text-sm">
-                  <div>
-                    <span className="font-medium block">{c.brand}</span>
-                    <span className="text-xs text-muted-foreground">{c.platform} • {c.type}</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium">{formatCurrency(c.amount)}</div>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${c.status === 'Paid' ? 'status-paid' : c.status === 'Delayed' ? 'status-delayed' : 'status-pending'}`}>{c.status}</span>
-                  </div>
-                </div>
-              ))}
+              <div>
+                  <h3 className="text-xl font-bold">
+                    {selectedDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">Add new content scheduled for this day</p>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-secondary rounded-full transition-colors">
+                  <X className="w-5 h-5" />
+              </button>
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">Brand</label>
-                  <input required className="soft-input w-full rounded-lg border bg-background px-3 py-2 text-sm" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} placeholder="e.g. Nike" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">Platform</label>
-                  <select className="soft-input w-full rounded-lg border bg-background px-3 py-2 text-sm" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})}>
-                    <option>Instagram</option><option>YouTube</option><option>Other</option>
-                  </select>
-                </div>
-                <div className="space-y-1"><label className="text-xs font-medium text-muted-foreground">Deliverable</label><input className="soft-input w-full rounded-lg border bg-background px-3 py-2 text-sm" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} placeholder="e.g. Reel" /></div>
-                <div className="space-y-1"><label className="text-xs font-medium text-muted-foreground">Amount (₹)</label><input type="number" required className="soft-input w-full rounded-lg border bg-background px-3 py-2 text-sm" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} placeholder="2500" /></div>
-                <div className="space-y-1"><label className="text-xs font-medium text-muted-foreground">Status</label><select className="soft-input w-full rounded-lg border bg-background px-3 py-2 text-sm" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}><option>Pending</option><option>Paid</option><option>Delayed</option></select></div>
-              </div>
-              <button type="submit" className="btn-calm w-full bg-primary text-primary-foreground rounded-lg py-2.5 text-sm font-medium mt-2">Add Collaboration</button>
+               {/* Brand */}
+               <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase text-muted-foreground">Brand Name</label>
+                  <input required className="w-full rounded-lg border bg-secondary/30 px-3 py-2.5 text-sm focus:ring-2 ring-primary/20 outline-none transition-all" 
+                         value={formData.brand} 
+                         onChange={e => setFormData({...formData, brand: e.target.value})} 
+                         placeholder="e.g. Nike" />
+               </div>
+
+               <div className="grid grid-cols-2 gap-4">
+                   {/* Platform */}
+                   <div className="space-y-1.5">
+                      <label className="text-xs font-semibold uppercase text-muted-foreground">Platform</label>
+                      <select className="w-full rounded-lg border bg-secondary/30 px-3 py-2.5 text-sm outline-none" 
+                              value={formData.platform} 
+                              onChange={e => setFormData({...formData, platform: e.target.value})}>
+                        <option>Instagram</option>
+                        <option>YouTube</option>
+                        <option>TikTok</option>
+                        <option>Other</option>
+                      </select>
+                   </div>
+                   {/* Amount */}
+                   <div className="space-y-1.5">
+                      <label className="text-xs font-semibold uppercase text-muted-foreground">Amount (₹)</label>
+                      <input type="number" required className="w-full rounded-lg border bg-secondary/30 px-3 py-2.5 text-sm outline-none" 
+                             value={formData.amount} 
+                             onChange={e => setFormData({...formData, amount: e.target.value})} 
+                             placeholder="5000" />
+                   </div>
+               </div>
+
+               {/* Deliverable */}
+               <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase text-muted-foreground">Deliverable</label>
+                  <input className="w-full rounded-lg border bg-secondary/30 px-3 py-2.5 text-sm outline-none" 
+                         value={formData.deliverable} 
+                         onChange={e => setFormData({...formData, deliverable: e.target.value})} 
+                         placeholder="e.g. Reel + Story" />
+               </div>
+
+               <Button type="submit" disabled={saving} className="w-full mt-4" size="lg">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                  Add to Calendar
+               </Button>
             </form>
           </div>
         </div>

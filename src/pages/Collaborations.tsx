@@ -7,6 +7,15 @@ import { Plus } from 'lucide-react';
 
 const Collaborations = () => {
   const [showForm, setShowForm] = useState(false);
+  // 1. This "Key" controls the table refresh
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleSuccess = () => {
+    console.log("Form saved! Refreshing table...");
+    // 2. Change the key, which forces the table to re-fetch data
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+  };
 
   return (
     <AppLayout title="Collaborations" subtitle="Manage all your brand partnerships in one place.">
@@ -26,15 +35,12 @@ const Collaborations = () => {
         {showForm && (
           <CollabForm
             onClose={() => setShowForm(false)}
-            onSubmit={(data) => {
-              console.log('New collaboration:', data);
-              setShowForm(false);
-            }}
+            onSuccess={handleSuccess} // 3. Pass the success handler here
           />
         )}
 
         {/* Table */}
-        <CollabTable />
+        <CollabTable keyProp={refreshKey} /> 
       </div>
     </AppLayout>
   );

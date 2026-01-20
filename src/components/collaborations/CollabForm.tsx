@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext"; // Use your context!
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Plus, X } from "lucide-react";
 
+// Matches your DB column names exactly for easier saving
 interface CollabFormData {
   brandName: string;
   platform: string;
@@ -33,17 +35,19 @@ const initialFormData: CollabFormData = {
   deliverable: "",
   postingDate: "",
   paymentAmount: "",
-  paymentStatus: "pending",
+  paymentStatus: "Pending", // Match the DB default case
   paymentDueDate: "",
   onboardingReceived: false,
   notes: "",
 };
 
 interface CollabFormProps {
-  onClose?: () => void;
+  onClose: () => void;
+  onSuccess: () => void; // New prop to trigger refresh
 }
 
-export const CollabForm = ({ onClose }: CollabFormProps) => {
+export const CollabForm = ({ onClose, onSuccess }: CollabFormProps) => {
+  const { user } = useAuth(); // Get user from context
   const [formData, setFormData] = useState<CollabFormData>(initialFormData);
   const [loading, setLoading] = useState(false);
 
@@ -55,25 +59,18 @@ export const CollabForm = ({ onClose }: CollabFormProps) => {
     e.preventDefault();
     setLoading(true);
 
-    // 🔐 Get logged-in user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (!user || userError) {
-      alert("Please login again");
+    if (!user) {
+      alert("You must be logged in to add a collaboration.");
       setLoading(false);
       return;
     }
 
-    // 📦 Insert into Supabase
     const { error } = await supabase.from("collaborations").insert({
       user_id: user.id,
       brand_name: formData.brandName,
       platform: formData.platform,
       deliverable: formData.deliverable,
-      amount: Number(formData.paymentAmount),
+      amount: formData.paymentAmount ? Number(formData.paymentAmount) : 0,
       payment_status: formData.paymentStatus,
       posting_date: formData.postingDate || null,
       payment_due_date: formData.paymentDueDate || null,
@@ -82,40 +79,43 @@ export const CollabForm = ({ onClose }: CollabFormProps) => {
     });
 
     if (error) {
-      console.error(error);
-      alert("Error saving collaboration");
+      console.error("Supabase Error:", error.message);
+      alert(`Error saving: ${error.message}`); // Show real error
       setLoading(false);
       return;
     }
 
-    // ✅ Success
-    setFormData(initialFormData);
+    // Success!
     setLoading(false);
-    onClose?.();
+    onSuccess(); // Tell parent to refresh
+    onClose();   // Close modal
   };
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card rounded-xl p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    // Keep your existing JSX layout exactly as is
+    <form onSubmit={handleSubmit} className="glass-card rounded-xl p-6 mb-6">
+       {/* ... (Your existing header code) ... */}
+       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold">Add New Collaboration</h3>
-        {onClose && (
           <Button type="button" variant="ghost" size="icon" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
-        )}
       </div>
 
       {/* Form Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* ... (Keep all your existing Inputs/Selects exactly the same) ... */}
+        {/* Just showing the first one as example, keep the rest! */}
         <div>
           <Label>Brand Name</Label>
           <Input
             value={formData.brandName}
             onChange={(e) => updateField("brandName", e.target.value)}
+            required
           />
         </div>
-
+        
+        {/* ... Paste the rest of your form fields here ... */}
         <div>
           <Label>Platform</Label>
           <Select
@@ -126,30 +126,21 @@ export const CollabForm = ({ onClose }: CollabFormProps) => {
               <SelectValue placeholder="Select platform" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="instagram">Instagram</SelectItem>
-              <SelectItem value="youtube">YouTube</SelectItem>
-              <SelectItem value="tiktok">TikTok</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
+              <SelectItem value="Instagram">Instagram</SelectItem>
+              <SelectItem value="YouTube">YouTube</SelectItem>
+              <SelectItem value="TikTok">TikTok</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
           <Label>Deliverable</Label>
-          <Select
-            value={formData.deliverable}
-            onValueChange={(v) => updateField("deliverable", v)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select deliverable" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="reel">Reel</SelectItem>
-              <SelectItem value="story">Story</SelectItem>
-              <SelectItem value="post">Post</SelectItem>
-              <SelectItem value="video">Video</SelectItem>
-            </SelectContent>
-          </Select>
+           <Input 
+             value={formData.deliverable}
+             onChange={(e) => updateField("deliverable", e.target.value)}
+             placeholder="e.g. Reel + Story"
+           />
         </div>
 
         <div>
@@ -180,9 +171,9 @@ export const CollabForm = ({ onClose }: CollabFormProps) => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="delayed">Delayed</SelectItem>
+              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="Paid">Paid</SelectItem>
+              <SelectItem value="Delayed">Delayed</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -196,7 +187,7 @@ export const CollabForm = ({ onClose }: CollabFormProps) => {
           />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pt-6">
           <Switch
             checked={formData.onboardingReceived}
             onCheckedChange={(v) => updateField("onboardingReceived", v)}
@@ -204,8 +195,8 @@ export const CollabForm = ({ onClose }: CollabFormProps) => {
           <span>Onboarding Received</span>
         </div>
       </div>
-
-      {/* Notes */}
+      
+       {/* Notes */}
       <div className="mt-4">
         <Label>Notes</Label>
         <Textarea
@@ -216,11 +207,9 @@ export const CollabForm = ({ onClose }: CollabFormProps) => {
 
       {/* Actions */}
       <div className="flex justify-end gap-3 mt-6">
-        {onClose && (
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-        )}
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
         <Button type="submit" disabled={loading}>
           <Plus className="w-4 h-4 mr-2" />
           {loading ? "Saving..." : "Add Collaboration"}

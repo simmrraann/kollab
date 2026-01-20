@@ -1,161 +1,116 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { MessageSquare, Loader2, Copy, Check } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { MessageSquare, Copy, Check } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const FollowUpGenerator = () => {
-  const [brand, setBrand] = useState('');
-  const [messageType, setMessageType] = useState('payment');
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [overdueBrands, setOverdueBrands] = useState<any[]>([]);
+  const [selectedCollabId, setSelectedCollabId] = useState('');
+  const [tone, setTone] = useState('polite');
   const [generatedMessage, setGeneratedMessage] = useState('');
-  const [copied, setCopied] = useState(false);
 
-  const handleGenerate = async () => {
-    if (!brand.trim()) return;
-    
-    setIsGenerating(true);
-    
-    // Simulate AI generation
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    const messages = {
-      payment: `Hi there! 👋
-
-I hope this message finds you well. I wanted to kindly follow up regarding the payment for our recent collaboration.
-
-According to our agreement, the payment of the agreed amount was due on [date]. I understand that things can get busy, so I just wanted to check in on the status.
-
-If there's anything you need from my end to process this, please don't hesitate to let me know.
-
-Thank you so much for the partnership — I really enjoyed working with ${brand}!
-
-Looking forward to hearing from you.
-
-Best,
-[Your Name]`,
-      deliverable: `Hi team! 👋
-
-Hope you're doing great! I wanted to touch base about the upcoming deliverable for our collaboration.
-
-Just checking if there are any updates on the content guidelines or product samples. I want to make sure everything is aligned before the recording date.
-
-Please let me know if there's anything specific you'd like me to include or any creative direction updates.
-
-Excited to bring this to life!
-
-Best,
-[Your Name]`,
-      onboarding: `Hi there! 👋
-
-I'm excited about our upcoming collaboration and wanted to follow up on the onboarding process.
-
-Could you please share the onboarding form and any brand guidelines when you have a chance? This will help me prepare and ensure the content aligns perfectly with ${brand}'s vision.
-
-Thanks so much, and looking forward to getting started!
-
-Best,
-[Your Name]`,
+  // Fetch overdue brands on load
+  useEffect(() => {
+    const fetchOverdue = async () => {
+      const { data } = await supabase
+        .from('collaborations')
+        .select('*')
+        .neq('payment_status', 'Paid'); // Get pending/delayed
+      
+      if (data) {
+        // Only keep ones with past due dates
+        const today = new Date();
+        const overdue = data.filter(item => item.payment_due_date && new Date(item.payment_due_date) < today);
+        setOverdueBrands(overdue);
+      }
     };
+    fetchOverdue();
+  }, []);
+
+  const handleGenerate = () => {
+    const collab = overdueBrands.find(c => c.id === selectedCollabId);
+    if (!collab) return;
+
+    const daysLate = Math.ceil((new Date().getTime() - new Date(collab.payment_due_date).getTime()) / (1000 * 3600 * 24));
     
-    setGeneratedMessage(messages[messageType as keyof typeof messages]);
-    setIsGenerating(false);
+    let msg = "";
+
+    if (tone === 'polite') {
+      msg = `Hi ${collab.brand_name} team,\n\nHope you're having a great week! Just wanted to quickly bump the invoice for the ${collab.deliverable} campaign (₹${collab.amount}). It looks like it was due on ${collab.payment_due_date}.\n\nLet me know if you need me to resend the invoice details.\n\nBest,\nSimran`;
+    } else if (tone === 'firm') {
+      msg = `Hi ${collab.brand_name},\n\nI'm following up on the outstanding payment of ₹${collab.amount} for the ${collab.deliverable} collaboration. This was due on ${collab.payment_due_date} (currently ${daysLate} days overdue).\n\nPlease let me know when this will be processed.\n\nRegards,\nSimran`;
+    } else {
+      msg = `URGENT: Overdue Payment - ${collab.brand_name}\n\nThis is a reminder that payment (₹${collab.amount}) is now significantly overdue. The due date was ${collab.payment_due_date}.\n\nPlease process this immediately to avoid further escalation.\n\nSimran`;
+    }
+
+    setGeneratedMessage(msg);
   };
 
-  const handleCopy = () => {
+  const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedMessage);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    toast.success("Message copied to clipboard!");
   };
 
   return (
-    <div className="glass-card rounded-xl p-6">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-          <MessageSquare className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h3 className="font-semibold text-foreground">Follow-Up Message Generator</h3>
-          <p className="text-sm text-muted-foreground">
-            Generate polite, professional follow-up messages
-          </p>
-        </div>
+    <Card className="p-6">
+      <div className="flex items-center gap-2 text-blue-600 font-medium mb-4">
+        <MessageSquare className="w-5 h-5" />
+        <span>Follow-Up Message Generator</span>
       </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-xs font-semibold uppercase text-muted-foreground">Select Overdue Brand</label>
+            <Select onValueChange={setSelectedCollabId}>
+              <SelectTrigger>
+                <SelectValue placeholder={overdueBrands.length > 0 ? "Select a brand..." : "No overdue payments found"} />
+              </SelectTrigger>
+              <SelectContent>
+                {overdueBrands.map(b => (
+                  <SelectItem key={b.id} value={b.id}>{b.brand_name} (₹{b.amount})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div className="space-y-2">
-          <Label htmlFor="brand" className="text-sm font-medium">Brand Name</Label>
-          <Input
-            id="brand"
-            placeholder="e.g., Glossier"
-            value={brand}
-            onChange={(e) => setBrand(e.target.value)}
-            className="soft-input"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Message Type</Label>
-          <Select value={messageType} onValueChange={setMessageType}>
-            <SelectTrigger className="soft-input">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="payment">Payment Follow-up</SelectItem>
-              <SelectItem value="deliverable">Deliverable Check-in</SelectItem>
-              <SelectItem value="onboarding">Onboarding Request</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+          <div className="space-y-2">
+            <label className="text-xs font-semibold uppercase text-muted-foreground">Tone</label>
+            <Select defaultValue="polite" onValueChange={setTone}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="polite">Polite Check-in</SelectItem>
+                <SelectItem value="firm">Firm Reminder</SelectItem>
+                <SelectItem value="urgent">Urgent / Final Notice</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-      <Button
-        onClick={handleGenerate}
-        disabled={!brand.trim() || isGenerating}
-        className="w-full btn-calm mb-4"
-      >
-        {isGenerating ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Generating...
-          </>
-        ) : (
-          <>
-            <MessageSquare className="w-4 h-4 mr-2" />
+          <Button onClick={handleGenerate} disabled={!selectedCollabId} className="w-full">
             Generate Message
-          </>
-        )}
-      </Button>
-
-      {generatedMessage && (
-        <div className="animate-fade-in">
-          <div className="flex items-center justify-between mb-2">
-            <Label className="text-sm font-medium">Generated Message</Label>
-            <Button variant="ghost" size="sm" onClick={handleCopy}>
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 mr-1 text-success" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4 mr-1" />
-                  Copy
-                </>
-              )}
-            </Button>
-          </div>
-          <div className="p-4 rounded-lg bg-muted/50 text-sm text-foreground whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto custom-scrollbar">
-            {generatedMessage}
-          </div>
+          </Button>
         </div>
-      )}
-    </div>
+
+        <div className="relative">
+          <Textarea 
+            className="h-full min-h-[150px] bg-secondary/30 resize-none font-mono text-sm p-4"
+            placeholder="Generated message will appear here..."
+            value={generatedMessage}
+            readOnly
+          />
+          {generatedMessage && (
+            <Button size="icon" variant="ghost" className="absolute top-2 right-2 h-8 w-8" onClick={copyToClipboard}>
+              <Copy className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
   );
 };
