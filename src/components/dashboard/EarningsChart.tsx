@@ -18,11 +18,7 @@ export const EarningsChart = () => {
           <p className="text-sm text-muted-foreground">Last 6 months overview</p>
         </div>
         <div className="text-right">
-<<<<<<< HEAD
-          <p className="text-2xl font-bold text-foreground">$28,600</p>
-=======
           <p className="text-2xl font-bold text-foreground">₹28,600</p>
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
           <p className="text-sm text-success">+44% this month</p>
         </div>
       </div>
@@ -43,28 +39,20 @@ export const EarningsChart = () => {
               tickLine={false}
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
             />
-            <YAxis
+              <YAxis
               axisLine={false}
               tickLine={false}
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-<<<<<<< HEAD
-              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-=======
               tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
             />
-            <Tooltip
+              <Tooltip
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '0.75rem',
                 boxShadow: '0 4px 12px hsl(var(--foreground) / 0.05)',
               }}
-<<<<<<< HEAD
-              formatter={(value: number) => [`$${value.toLocaleString()}`, 'Earnings']}
-=======
               formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Earnings']}
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
               labelStyle={{ color: 'hsl(var(--foreground))' }}
             />
             <Area

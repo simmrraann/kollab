@@ -39,11 +39,7 @@ export const Sidebar = () => {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Zap className="w-4 h-4 text-primary-foreground" />
             </div>
-<<<<<<< HEAD
-            <span className="font-semibold text-sidebar-foreground">CollabOS</span>
-=======
             <span className="font-semibold text-sidebar-foreground">Kollab</span>
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
           </div>
         )}
         {collapsed && (

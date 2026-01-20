@@ -1,122 +1,104 @@
-import { useState } from 'react';
-<<<<<<< HEAD
-=======
-import { supabase } from '@/lib/supabase';
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Plus, X } from 'lucide-react';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Plus, X } from "lucide-react";
 
 interface CollabFormData {
   brandName: string;
   platform: string;
   deliverable: string;
-  recordingDate: string;
   postingDate: string;
   paymentAmount: string;
   paymentStatus: string;
   paymentDueDate: string;
   onboardingReceived: boolean;
-  referralLinks: string;
   notes: string;
 }
 
 const initialFormData: CollabFormData = {
-  brandName: '',
-  platform: '',
-  deliverable: '',
-  recordingDate: '',
-  postingDate: '',
-  paymentAmount: '',
-  paymentStatus: 'pending',
-  paymentDueDate: '',
+  brandName: "",
+  platform: "",
+  deliverable: "",
+  postingDate: "",
+  paymentAmount: "",
+  paymentStatus: "pending",
+  paymentDueDate: "",
   onboardingReceived: false,
-  referralLinks: '',
-  notes: '',
+  notes: "",
 };
 
 interface CollabFormProps {
   onClose?: () => void;
-<<<<<<< HEAD
-  onSubmit?: (data: CollabFormData) => void;
-}
-
-export const CollabForm = ({ onClose, onSubmit }: CollabFormProps) => {
-  const [formData, setFormData] = useState<CollabFormData>(initialFormData);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit?.(formData);
-    setFormData(initialFormData);
-=======
 }
 
 export const CollabForm = ({ onClose }: CollabFormProps) => {
   const [formData, setFormData] = useState<CollabFormData>(initialFormData);
   const [loading, setLoading] = useState(false);
 
+  const updateField = (field: keyof CollabFormData, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // 1️⃣ Get logged-in user
+    // 🔐 Get logged-in user
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
 
     if (!user || userError) {
-      alert('Please login again');
+      alert("Please login again");
       setLoading(false);
       return;
     }
 
-    // 2️⃣ Insert into Supabase
-    const { error } = await supabase.from('collaborations').insert({
+    // 📦 Insert into Supabase
+    const { error } = await supabase.from("collaborations").insert({
       user_id: user.id,
       brand_name: formData.brandName,
       platform: formData.platform,
       deliverable: formData.deliverable,
-      amount: Number(formData.paymentAmount), // ₹ stored as number
+      amount: Number(formData.paymentAmount),
       payment_status: formData.paymentStatus,
       posting_date: formData.postingDate || null,
       payment_due_date: formData.paymentDueDate || null,
+      onboarding_received: formData.onboardingReceived,
       notes: formData.notes,
     });
 
     if (error) {
       console.error(error);
-      alert('Error saving collaboration');
+      alert("Error saving collaboration");
       setLoading(false);
       return;
     }
 
-    // 3️⃣ Success
+    // ✅ Success
     setFormData(initialFormData);
     setLoading(false);
     onClose?.();
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
-  };
-
-  const updateField = (field: keyof CollabFormData, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card rounded-xl p-6 animate-scale-in">
+    <form onSubmit={handleSubmit} className="glass-card rounded-xl p-6">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-foreground">Add New Collaboration</h3>
+        <h3 className="text-lg font-semibold">Add New Collaboration</h3>
         {onClose && (
           <Button type="button" variant="ghost" size="icon" onClick={onClose}>
             <X className="w-4 h-4" />
@@ -124,37 +106,23 @@ export const CollabForm = ({ onClose }: CollabFormProps) => {
         )}
       </div>
 
+      {/* Form Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Brand Name */}
-        <div className="space-y-2">
-<<<<<<< HEAD
-          <Label htmlFor="brandName" className="text-sm font-medium">
-            Brand Name
-          </Label>
-          <Input
-            id="brandName"
-            placeholder="e.g., Glossier"
-=======
+        <div>
           <Label>Brand Name</Label>
           <Input
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
             value={formData.brandName}
-            onChange={(e) => updateField('brandName', e.target.value)}
-            className="soft-input"
+            onChange={(e) => updateField("brandName", e.target.value)}
           />
         </div>
 
-        {/* Platform */}
-        <div className="space-y-2">
-<<<<<<< HEAD
-          <Label htmlFor="platform" className="text-sm font-medium">
-            Platform
-          </Label>
-=======
+        <div>
           <Label>Platform</Label>
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
-          <Select value={formData.platform} onValueChange={(v) => updateField('platform', v)}>
-            <SelectTrigger className="soft-input">
+          <Select
+            value={formData.platform}
+            onValueChange={(v) => updateField("platform", v)}
+          >
+            <SelectTrigger>
               <SelectValue placeholder="Select platform" />
             </SelectTrigger>
             <SelectContent>
@@ -166,89 +134,49 @@ export const CollabForm = ({ onClose }: CollabFormProps) => {
           </Select>
         </div>
 
-        {/* Deliverable */}
-        <div className="space-y-2">
-<<<<<<< HEAD
-          <Label htmlFor="deliverable" className="text-sm font-medium">
-            Deliverables
-          </Label>
-=======
+        <div>
           <Label>Deliverable</Label>
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
-          <Select value={formData.deliverable} onValueChange={(v) => updateField('deliverable', v)}>
-            <SelectTrigger className="soft-input">
+          <Select
+            value={formData.deliverable}
+            onValueChange={(v) => updateField("deliverable", v)}
+          >
+            <SelectTrigger>
               <SelectValue placeholder="Select deliverable" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="reel">Reel</SelectItem>
               <SelectItem value="story">Story</SelectItem>
               <SelectItem value="post">Post</SelectItem>
-<<<<<<< HEAD
-              <SelectItem value="carousel">Carousel</SelectItem>
-              <SelectItem value="video">YouTube Video</SelectItem>
-              <SelectItem value="integration">Integration</SelectItem>
-              <SelectItem value="custom">Custom</SelectItem>
-=======
               <SelectItem value="video">Video</SelectItem>
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
             </SelectContent>
           </Select>
         </div>
 
-<<<<<<< HEAD
-        {/* Recording Date */}
-        <div className="space-y-2">
-          <Label htmlFor="recordingDate" className="text-sm font-medium">
-            Recording Date
-          </Label>
+        <div>
+          <Label>Posting Date</Label>
           <Input
-            id="recordingDate"
-            type="date"
-            value={formData.recordingDate}
-            onChange={(e) => updateField('recordingDate', e.target.value)}
-            className="soft-input"
-          />
-        </div>
-
-        {/* Posting Date */}
-        <div className="space-y-2">
-          <Label htmlFor="postingDate" className="text-sm font-medium">
-            Posting Date
-          </Label>
-          <Input
-            id="postingDate"
             type="date"
             value={formData.postingDate}
-            onChange={(e) => updateField('postingDate', e.target.value)}
-            className="soft-input"
+            onChange={(e) => updateField("postingDate", e.target.value)}
           />
         </div>
 
-        {/* Payment Amount */}
-        <div className="space-y-2">
-          <Label htmlFor="paymentAmount" className="text-sm font-medium">
-            Payment Amount
-          </Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-            <Input
-              id="paymentAmount"
-              type="number"
-              placeholder="0.00"
-              value={formData.paymentAmount}
-              onChange={(e) => updateField('paymentAmount', e.target.value)}
-              className="soft-input pl-7"
-            />
-          </div>
+        <div>
+          <Label>Payment Amount (₹)</Label>
+          <Input
+            type="number"
+            value={formData.paymentAmount}
+            onChange={(e) => updateField("paymentAmount", e.target.value)}
+          />
         </div>
 
-        {/* Payment Status */}
-        <div className="space-y-2">
-          <Label htmlFor="paymentStatus" className="text-sm font-medium">
-            Payment Status
-          </Label>
-          <Select value={formData.paymentStatus} onValueChange={(v) => updateField('paymentStatus', v)}>
-            <SelectTrigger className="soft-input">
+        <div>
+          <Label>Payment Status</Label>
+          <Select
+            value={formData.paymentStatus}
+            onValueChange={(v) => updateField("paymentStatus", v)}
+          >
+            <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -259,94 +187,43 @@ export const CollabForm = ({ onClose }: CollabFormProps) => {
           </Select>
         </div>
 
-        {/* Payment Due Date */}
-        <div className="space-y-2">
-          <Label htmlFor="paymentDueDate" className="text-sm font-medium">
-            Payment Due Date
-          </Label>
+        <div>
+          <Label>Payment Due Date</Label>
           <Input
-            id="paymentDueDate"
             type="date"
             value={formData.paymentDueDate}
-            onChange={(e) => updateField('paymentDueDate', e.target.value)}
-            className="soft-input"
+            onChange={(e) => updateField("paymentDueDate", e.target.value)}
           />
         </div>
 
-        {/* Onboarding Form */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Onboarding Form Received</Label>
-          <div className="flex items-center gap-3 h-10">
-            <Switch
-              checked={formData.onboardingReceived}
-              onCheckedChange={(checked) => updateField('onboardingReceived', checked)}
-            />
-            <span className="text-sm text-muted-foreground">
-              {formData.onboardingReceived ? 'Yes' : 'No'}
-            </span>
-          </div>
+        <div className="flex items-center gap-3">
+          <Switch
+            checked={formData.onboardingReceived}
+            onCheckedChange={(v) => updateField("onboardingReceived", v)}
+          />
+          <span>Onboarding Received</span>
         </div>
       </div>
 
-      {/* Full Width Fields */}
-      <div className="mt-4 space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="referralLinks" className="text-sm font-medium">
-            Referral / Reference Links
-          </Label>
-          <Input
-            id="referralLinks"
-            placeholder="Add any relevant links..."
-            value={formData.referralLinks}
-            onChange={(e) => updateField('referralLinks', e.target.value)}
-            className="soft-input"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="notes" className="text-sm font-medium">
-            Notes
-          </Label>
-          <Textarea
-            id="notes"
-            placeholder="Additional notes about this collaboration..."
-            value={formData.notes}
-            onChange={(e) => updateField('notes', e.target.value)}
-            className="soft-input min-h-[80px] resize-none"
-          />
-        </div>
+      {/* Notes */}
+      <div className="mt-4">
+        <Label>Notes</Label>
+        <Textarea
+          value={formData.notes}
+          onChange={(e) => updateField("notes", e.target.value)}
+        />
       </div>
 
       {/* Actions */}
-=======
-        {/* Payment Amount */}
-        <div className="space-y-2">
-          <Label>Payment Amount (₹)</Label>
-          <Input
-            type="number"
-            value={formData.paymentAmount}
-            onChange={(e) => updateField('paymentAmount', e.target.value)}
-            className="soft-input"
-          />
-        </div>
-      </div>
-
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
-      <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
+      <div className="flex justify-end gap-3 mt-6">
         {onClose && (
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
         )}
-<<<<<<< HEAD
-        <Button type="submit" className="btn-calm">
+        <Button type="submit" disabled={loading}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Collaboration
-=======
-        <Button type="submit" className="btn-calm" disabled={loading}>
-          <Plus className="w-4 h-4 mr-2" />
-          {loading ? 'Saving...' : 'Add Collaboration'}
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
+          {loading ? "Saving..." : "Add Collaboration"}
         </Button>
       </div>
     </form>

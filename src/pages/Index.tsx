@@ -17,6 +17,7 @@ const Index = () => {
           icon={<Briefcase className="w-5 h-5" />}
           trend={{ value: 12, isPositive: true }}
         />
+
         <StatsCard
           title="Upcoming Deadlines"
           value={5}
@@ -24,17 +25,14 @@ const Index = () => {
           icon={<Clock className="w-5 h-5" />}
           variant="warning"
         />
+
         <StatsCard
           title="Pending Payments"
-<<<<<<< HEAD
-          value="$18.3k"
-=======
           value="₹18,300"
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
           subtitle="6 invoices pending"
           icon={<DollarSign className="w-5 h-5" />}
-          variant="default"
         />
+
         <StatsCard
           title="Delayed Payments"
           value={3}
@@ -42,6 +40,7 @@ const Index = () => {
           icon={<AlertTriangle className="w-5 h-5" />}
           variant="danger"
         />
+
         <StatsCard
           title="Completed"
           value={24}
@@ -52,15 +51,13 @@ const Index = () => {
         />
       </div>
 
-      {/* Main Content Grid */}
+      {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Chart + Recent */}
         <div className="lg:col-span-2 space-y-6">
           <EarningsChart />
           <RecentCollaborations />
         </div>
 
-        {/* Right Column - Deadlines */}
         <div>
           <UpcomingDeadlines />
         </div>

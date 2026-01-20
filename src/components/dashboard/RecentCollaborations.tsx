@@ -96,11 +96,7 @@ export const RecentCollaborations = () => {
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <p className="font-semibold text-foreground">
-<<<<<<< HEAD
-                  ${collab.amount.toLocaleString()}
-=======
                   ₹{collab.amount.toLocaleString()}
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
                 </p>
                 <p className="text-xs text-muted-foreground">{collab.postingDate}</p>
               </div>

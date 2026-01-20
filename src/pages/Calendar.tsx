@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-import { AppLayout } from '@/components/layout/AppLayout';
-import { CollabCalendar } from '@/components/calendar/CollabCalendar';
-
-const Calendar = () => {
-  return (
-    <AppLayout title="Calendar" subtitle="Visualize your collaboration timeline.">
-      <CollabCalendar />
-=======
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -149,7 +140,6 @@ const Calendar = () => {
           </div>
         </div>
       )}
->>>>>>> 6ab6321 (inital kollab setup with Supabase Backend)
     </AppLayout>
   );
 };
