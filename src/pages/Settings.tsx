@@ -1,134 +1,98 @@
 import { AppLayout } from '@/components/layout/AppLayout';
-import { ThemeSwitcher } from '@/components/theme/ThemeSwitcher';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { User, Bell, Palette, Shield, Database } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext'; // Import this!
+import { useNavigate } from 'react-router-dom';
+import { LogOut, User, Moon, Sun } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { useTheme } from '@/contexts/ThemeContext'; // Import theme hook
 
 const Settings = () => {
+  const { user } = useAuth(); // Get real user
+  const navigate = useNavigate();
+  const { theme, setTheme, mode, toggleMode } = useTheme();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
+    toast.success("Signed out successfully");
+  };
+
   return (
-    <AppLayout title="Settings" subtitle="Manage your preferences and account.">
-      <div className="max-w-3xl space-y-8">
-        {/* Profile Section */}
-        <section className="glass-card rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-foreground">Profile</h2>
-              <p className="text-sm text-muted-foreground">Your personal information</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Display Name</Label>
-              <Input defaultValue="Content Creator" className="soft-input" />
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input defaultValue="creator@example.com" className="soft-input" />
-            </div>
-          </div>
-        </section>
-
-        {/* Theme Section */}
-        <section className="glass-card rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Palette className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-foreground">Appearance</h2>
-              <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
-            </div>
-          </div>
-
+    <AppLayout title="Settings">
+      <div className="max-w-2xl space-y-6">
+        
+        {/* Profile Section - NOW REAL */}
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <User className="w-5 h-5 text-primary" /> Profile
+          </h3>
           <div className="space-y-4">
-            <div>
-              <Label className="mb-3 block">Theme Style</Label>
-              <ThemeSwitcher />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Choose between Royal Muse (elegant & luxurious), Steel Valor (bold & powerful), or Sage Studio (calm & grounded).
-            </p>
+             <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl border">
+                <div>
+                    <span className="block text-xs text-muted-foreground uppercase font-bold tracking-wider">Current Account</span>
+                    <span className="text-base font-medium">{user?.email || "Loading..."}</span>
+                </div>
+                <div className="text-xs px-2 py-1 bg-green-500/10 text-green-600 rounded-full border border-green-200">
+                    Active
+                </div>
+             </div>
           </div>
-        </section>
+        </Card>
 
-        {/* Notifications Section */}
-        <section className="glass-card rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Bell className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-foreground">Notifications</h2>
-              <p className="text-sm text-muted-foreground">Manage your alert preferences</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+        {/* Theme & Appearance Section */}
+        <Card className="p-6">
+           <h3 className="text-lg font-semibold mb-4">Appearance</h3>
+           
+           {/* Dark Mode Toggle */}
+           <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="font-medium text-foreground">Payment Reminders</p>
-                <p className="text-sm text-muted-foreground">Get notified about upcoming payments</p>
+                  <div className="font-medium">Dark Mode</div>
+                  <div className="text-sm text-muted-foreground">Switch between light and dark themes</div>
               </div>
-              <Switch defaultChecked />
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-foreground">Deadline Alerts</p>
-                <p className="text-sm text-muted-foreground">Reminders for posting deadlines</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-foreground">Overdue Payments</p>
-                <p className="text-sm text-muted-foreground">Alerts for delayed payments</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-          </div>
-        </section>
+              <Button variant="outline" size="icon" onClick={toggleMode} className="rounded-full">
+                  {mode === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              </Button>
+           </div>
 
-        {/* Data Section */}
-        <section className="glass-card rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Database className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-foreground">Data & Storage</h2>
-              <p className="text-sm text-muted-foreground">Manage your data</p>
-            </div>
-          </div>
+           {/* Theme Selection */}
+           <div className="space-y-3">
+               <div className="font-medium">Color Theme</div>
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                   <button 
+                     onClick={() => setTheme('royal-muse')}
+                     className={`p-3 rounded-xl border-2 flex items-center gap-2 transition-all ${theme === 'royal-muse' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-transparent bg-secondary/50'}`}
+                   >
+                       <div className="w-4 h-4 rounded-full bg-purple-500"></div>
+                       <span className="text-sm font-medium">Royal Muse</span>
+                   </button>
+                   
+                   <button 
+                     onClick={() => setTheme('steel-valor')}
+                     className={`p-3 rounded-xl border-2 flex items-center gap-2 transition-all ${theme === 'steel-valor' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-transparent bg-secondary/50'}`}
+                   >
+                       <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+                       <span className="text-sm font-medium">Steel Valor</span>
+                   </button>
 
-          <div className="flex items-center gap-3">
-            <Button variant="outline">Export Data</Button>
-            <Button variant="outline">Import Data</Button>
-          </div>
-        </section>
+                   <button 
+                     onClick={() => setTheme('sage-studio')}
+                     className={`p-3 rounded-xl border-2 flex items-center gap-2 transition-all ${theme === 'sage-studio' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-transparent bg-secondary/50'}`}
+                   >
+                       <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                       <span className="text-sm font-medium">Sage Studio</span>
+                   </button>
+               </div>
+           </div>
+        </Card>
 
-        {/* Security Section */}
-        <section className="glass-card rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-foreground">Security</h2>
-              <p className="text-sm text-muted-foreground">Protect your account</p>
-            </div>
-          </div>
+        <div className="flex justify-end">
+            <Button variant="destructive" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" /> Log Out
+            </Button>
+        </div>
 
-          <Button variant="outline">Change Password</Button>
-        </section>
       </div>
     </AppLayout>
   );

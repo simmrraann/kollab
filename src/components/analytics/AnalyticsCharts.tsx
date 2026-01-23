@@ -1,141 +1,136 @@
 import { useMemo } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
 } from 'recharts';
 
-// --- COLORS ---
-const COLORS = {
-  paid: '#22c55e',   // Green
-  pending: '#eab308', // Yellow
-  delayed: '#ef4444', // Red
-  primary: '#3b82f6', // Blue (for bars)
-};
-
 export const AnalyticsCharts = ({ data }: { data: any[] }) => {
+  const { mode } = useTheme();
+  
+  // Use CSS Variables so charts follow the theme automatically
+  const getVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const primaryColor = `hsl(${getVar('--primary')})`;
+  const secondaryColor = `hsl(${getVar('--muted')})`; 
+  const textColor = mode === 'dark' ? '#94a3b8' : '#64748b';
+  const gridColor = mode === 'dark' ? '#334155' : '#e2e8f0';
 
-  // 1. Calculate Monthly Earnings (Last 6 Months)
+  // --- DATA PROCESSING ---
   const monthlyData = useMemo(() => {
+    if (!data || data.length === 0) return [];
     const today = new Date();
     const months = [];
-
     for (let i = 5; i >= 0; i--) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const monthName = d.toLocaleString('default', { month: 'short' });
       const year = d.getFullYear();
-
-      // Sum only "Paid" amounts for this month
-      const total = data
-        .filter(item => {
+      
+      const paid = data.filter(item => {
           if (item.payment_status !== 'Paid') return false;
           const itemDate = new Date(item.posting_date || item.created_at);
           return itemDate.getMonth() === d.getMonth() && itemDate.getFullYear() === year;
-        })
-        .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      }).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      
+      const pending = data.filter(item => {
+          if (item.payment_status !== 'Pending') return false;
+          const itemDate = new Date(item.posting_date || item.created_at);
+          return itemDate.getMonth() === d.getMonth() && itemDate.getFullYear() === year;
+      }).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
-      months.push({ name: monthName, value: total });
+      months.push({ name: monthName, paid, pending });
     }
     return months;
   }, [data]);
 
-  // 2. Calculate Payment Status (Pie Chart)
   const pieData = useMemo(() => {
     const paid = data.filter(c => c.payment_status === 'Paid').length;
     const pending = data.filter(c => c.payment_status === 'Pending').length;
     const delayed = data.filter(c => c.payment_status === 'Delayed').length;
-
-    // Only show segments that have data > 0
     return [
-      { name: 'Paid', value: paid, color: COLORS.paid },
-      { name: 'Pending', value: pending, color: COLORS.pending },
-      { name: 'Delayed', value: delayed, color: COLORS.delayed },
-    ].filter(item => item.value > 0);
-  }, [data]);
+      { name: 'Paid', value: paid, color: primaryColor },
+      { name: 'Pending', value: pending, color: '#eab308' }, // Yellow fixed for warning
+      { name: 'Delayed', value: delayed, color: '#ef4444' }, // Red fixed for danger
+    ].filter(i => i.value > 0);
+  }, [data, primaryColor]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      
-      {/* --- CHART 1: Monthly Earnings --- */}
-      <div className="glass-card rounded-xl p-6">
-        <h3 className="font-semibold mb-1">Monthly Earnings</h3>
-        <p className="text-sm text-muted-foreground mb-6">Revenue over last 6 months</p>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-              <XAxis 
-                dataKey="name" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fontSize: 12, fill: '#64748B' }} 
-              />
-              <YAxis 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fontSize: 12, fill: '#64748B' }}
-                tickFormatter={(value) => `₹${value/1000}k`} 
-              />
-              <Tooltip 
-                cursor={{ fill: '#F1F5F9' }}
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Earnings']}
-              />
-              <Bar 
-                dataKey="value" 
-                fill={COLORS.primary} 
-                radius={[4, 4, 0, 0]} 
-                barSize={40}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+        {/* CHART 1: CLEAN Area Chart */}
+        <div className="glass-card p-6 rounded-2xl">
+           <h3 className="font-bold text-lg mb-4">Revenue Trend</h3>
+           <div className="h-[300px]">
+             <ResponsiveContainer width="100%" height="100%">
+               <AreaChart data={monthlyData}>
+                 <defs>
+                   <linearGradient id="colorPaid" x1="0" y1="0" x2="0" y2="1">
+                     <stop offset="5%" stopColor={primaryColor} stopOpacity={0.3}/>
+                     <stop offset="95%" stopColor={primaryColor} stopOpacity={0}/>
+                   </linearGradient>
+                 </defs>
+                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                 <XAxis dataKey="name" tick={{fill: textColor}} axisLine={false} tickLine={false} />
+                 <YAxis tick={{fill: textColor}} axisLine={false} tickLine={false} tickFormatter={(val)=>`₹${val/1000}k`}/>
+                 <Tooltip 
+                    contentStyle={{backgroundColor: mode === 'dark' ? '#1e293b' : '#fff', borderRadius: '8px', border: '1px solid #334155'}} 
+                 />
+                 <Area type="monotone" dataKey="paid" stroke={primaryColor} fillOpacity={1} fill="url(#colorPaid)" strokeWidth={3} />
+               </AreaChart>
+             </ResponsiveContainer>
+           </div>
         </div>
-      </div>
 
-      {/* --- CHART 2: Payment Status --- */}
-      <div className="glass-card rounded-xl p-6">
-        <h3 className="font-semibold mb-1">Payment Status</h3>
-        <p className="text-sm text-muted-foreground mb-6">Pending vs Received vs Delayed</p>
-
-        <div className="h-[300px] w-full flex items-center justify-center">
-          {pieData.length === 0 ? (
-             <div className="text-sm text-muted-foreground">No data to display yet</div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                   formatter={(value: number) => [value, 'Collaborations']}
-                   contentStyle={{ borderRadius: '8px' }}
-                />
-                <Legend verticalAlign="bottom" height={36}/>
-              </PieChart>
-            </ResponsiveContainer>
-          )}
+        {/* CHART 2: CLEAN Bar Chart (Side by Side) */}
+        <div className="glass-card p-6 rounded-2xl">
+           <h3 className="font-bold text-lg mb-4">Paid vs Pending</h3>
+           <div className="h-[300px]">
+             <ResponsiveContainer width="100%" height="100%">
+               <BarChart data={monthlyData} barGap={4}>
+                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                 <XAxis dataKey="name" tick={{fill: textColor}} axisLine={false} tickLine={false} />
+                 <YAxis tick={{fill: textColor}} axisLine={false} tickLine={false} />
+                 <Tooltip contentStyle={{backgroundColor: mode === 'dark' ? '#1e293b' : '#fff', borderRadius: '8px'}} />
+                 <Legend />
+                 {/* Primary Theme Color for Paid */}
+                 <Bar dataKey="paid" name="Paid" fill={primaryColor} radius={[4, 4, 0, 0]} />
+                 {/* Grey/Muted for Pending to differentiate */}
+                 <Bar dataKey="pending" name="Pending" fill={mode === 'dark' ? '#475569' : '#cbd5e1'} radius={[4, 4, 0, 0]} />
+               </BarChart>
+             </ResponsiveContainer>
+           </div>
         </div>
-      </div>
 
+        {/* CHART 3: Donut Chart */}
+        <div className="glass-card p-6 rounded-2xl lg:col-span-2 flex flex-col md:flex-row items-center justify-around">
+           <div className="mb-6 md:mb-0">
+               <h3 className="font-bold text-lg mb-2">Payment Status</h3>
+               <p className="text-sm text-muted-foreground">Distribution of your payments</p>
+           </div>
+           <div className="h-[250px] w-[300px]">
+             <ResponsiveContainer width="100%" height="100%">
+               <PieChart>
+                 <Pie
+                   data={pieData}
+                   cx="50%"
+                   cy="50%"
+                   innerRadius={60}
+                   outerRadius={80}
+                   paddingAngle={5}
+                   dataKey="value"
+                 >
+                   {pieData.map((entry, index) => (
+                     <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
+                   ))}
+                 </Pie>
+                 <Tooltip />
+                 <Legend verticalAlign="bottom" height={36}/>
+               </PieChart>
+             </ResponsiveContainer>
+           </div>
+        </div>
+
+      </div>
     </div>
   );
 };

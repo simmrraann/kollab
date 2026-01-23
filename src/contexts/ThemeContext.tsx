@@ -1,32 +1,43 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from "react";
 
-export type Theme = 'royal-muse' | 'steel-valor' | 'sage-studio';
+type Theme = "royal-muse" | "steel-valor" | "sage-studio";
+type Mode = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
+  mode: Mode;
   setTheme: (theme: Theme) => void;
+  toggleMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('collab-os-theme');
-    return (saved as Theme) || 'royal-muse';
-  });
+export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("kollab-theme") as Theme) || "royal-muse");
+  const [mode, setMode] = useState<Mode>(() => (localStorage.getItem("kollab-mode") as Mode) || "light");
 
   useEffect(() => {
-    localStorage.setItem('collab-os-theme', theme);
+    const root = window.document.documentElement;
     
-    // Remove all theme classes
-    document.documentElement.classList.remove('theme-royal-muse', 'theme-steel-valor', 'theme-sage-studio');
+    // 1. Reset Classes
+    root.classList.remove("light", "dark", "royal-muse", "steel-valor", "sage-studio");
     
-    // Add current theme class
-    document.documentElement.classList.add(`theme-${theme}`);
-  }, [theme]);
+    // 2. Add Active Classes
+    root.classList.add(mode); // Adds 'dark' or 'light'
+    root.classList.add(theme); // Adds 'royal-muse', etc.
+    
+    // 3. Force style update for charts
+    root.style.colorScheme = mode;
+
+    // 4. Save
+    localStorage.setItem("kollab-theme", theme);
+    localStorage.setItem("kollab-mode", mode);
+  }, [theme, mode]);
+
+  const toggleMode = () => setMode((prev) => (prev === "light" ? "dark" : "light"));
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, mode, setTheme, toggleMode }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -34,8 +45,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
+  if (!context) throw new Error("useTheme must be used within a ThemeProvider");
   return context;
 };
