@@ -1,73 +1,72 @@
-# Welcome to your Lovable project
+# Kollab ⚡
 
-## Project info
+**The Operating System for Content Creators.**
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+![Kollab Dashboard Screenshot](https://github.com/simmrraann/kollab/issues/1)
 
-## How can I edit this code?
 
-There are several ways of editing your application.
+## 📖 The Story: Why I Built This
+As a content creator, I personally struggled with the "business" side of creativity. 
 
-**Use Lovable**
+I used to manually write down brand deals in a physical diary. I had no way to track which payments were pending, I missed follow-up dates, and my data was scattered across Instagram DMs and emails. It was chaotic.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+I realized I needed a dedicated database "Second Brain", specifically for collaborations. So, I built **Kollab**. It transforms scattered DMs into a structured workflow, helping creators like me stop worrying about admin work and focus on creating content.
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🚀 Key Features
 
-**Use your preferred IDE**
+* **🤖 AI-Powered Data Entry:** Integrated **Google Gemini AI** to parse messy Instagram DMs. It automatically extracts Brand Name, Deliverables, Price, and Deadlines into structured data.
+* **📊 Financial Analytics:** Visual dashboards to track Monthly Earnings, Payment Status (Paid vs. Pending), and Brand Analytics.
+* **🎨 Dynamic Theming:** Features 3 distinct mood themes (Royal Muse, Steel Valor, Sage Studio) with a fully functional **Dark Mode**.
+* **Kanban Workflow:** A Trello-style board to drag-and-drop collaborations from "Pending" to "Paid."
+* **📅 Content Calendar:** Visual timeline to manage upcoming posting deadlines.
+* **🔐 Secure Authentication:** Full login/signup system powered by Supabase.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🛠️ Tech Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+* **Frontend:** React.js, TypeScript, Vite
+* **Styling:** Tailwind CSS, Shadcn UI
+* **Backend & Auth:** Supabase (PostgreSQL)
+* **AI Integration:** Google Gemini API (LLM)
+* **Charts:** Recharts
+* **State Management:** React Context API
 
-Follow these steps:
+## 📸 Screenshots
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+| collaborations | Dark Mode |
+|:---:|:---:|
+| ![Collaborations](https://github.com/simmrraann/kollab/issues/4) | ![Dark Mode](https://github.com/simmrraann/kollab/issues/5) |
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+| AI Tools | Analytics |
+|:---:|:---:|
+| ![AI Tools](https://github.com/simmrraann/kollab/issues/2) | ![Analytics](https://github.com/simmrraann/kollab/issues/3) |
 
-# Step 3: Install the necessary dependencies.
-npm i
+*(Note: I will update these placeholders with actual screenshots of the app running locally)*
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+## ⚡ Getting Started
 
-**Edit a file directly in GitHub**
+1.  **Clone the repository**
+    ```bash
+    git clone (https://github.com/simmrraann/kollab.git)
+    cd kollab
+    ```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+2.  **Install dependencies**
+    ```bash
+    npm install
+    ```
 
-**Use GitHub Codespaces**
+3.  **Set up Environment Variables**
+    Create a `.env` file and add your keys:
+    ```env
+    VITE_SUPABASE_URL=your_supabase_url
+    VITE_SUPABASE_ANON_KEY=your_supabase_key
+    VITE_GEMINI_API_KEY=your_gemini_key
+    ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+4.  **Run the App**
+    ```bash
+    npm run dev
+    ```
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 🤝 Contributing
+Built with ❤️ by **Simran**. Connect with me on [LinkedIn](www.linkedin.com/in/simran-singh-a5170a397) or check out my content!
