@@ -69,4 +69,4 @@ I realized I needed a dedicated database "Second Brain", specifically for collab
     ```
 
 ## 🤝 Contributing
-Built with ❤️ by **Simran**. Connect with me on [LinkedIn](www.linkedin.com/in/simran-singh-a5170a397) or check out my content!
+Built with ❤️ by **Simran**. Connect with me on [LinkedIn](https://www.linkedin.com/in/simran-builds/) 

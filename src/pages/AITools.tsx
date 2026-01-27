@@ -1,3 +1,6 @@
+import { MediaKit } from '@/components/pro/MediaKit';
+import { InvoiceGenerator } from '@/components/pro/InvoiceGenerator';
+import { EmailSync } from '@/components/pro/EmailSync';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { SmartExtractor } from '@/components/ai/SmartExtractor';
 import { PaymentDetector } from '@/components/ai/PaymentDetector';
@@ -32,6 +35,39 @@ const AITools = () => {
           <div className="lg:col-span-2">
             <FollowUpGenerator />
           </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Smart Extractor */}
+          <SmartExtractor />
+
+          {/* Payment Detector */}
+          <PaymentDetector />
+
+          {/* Pitch Generator */}
+          <div className="lg:col-span-2">
+            <PitchGenerator />
+          </div>
+
+          {/* Follow-Up Generator */}
+          <div className="lg:col-span-2">
+            <FollowUpGenerator />
+          </div>
+
+          {/* 👇👇 PASTE YOUR NEW CODE RIGHT HERE 👇👇 */}
+          
+          <div className="lg:col-span-2 border-t border-border pt-8 mt-4">
+            <h3 className="text-xl font-bold mb-6">🚀 Pro Workspace Features</h3>
+            <div className="grid gap-8">
+              <MediaKit />
+              <InvoiceGenerator />
+              <EmailSync />
+            </div>
+          </div>
+
+          {/* 👆👆 END PASTE 👆👆 */}
+
+        </div>
+
+
         </div>
       </div>
     </AppLayout>
