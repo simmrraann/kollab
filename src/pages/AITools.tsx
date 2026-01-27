@@ -3,6 +3,8 @@ import { SmartExtractor } from '@/components/ai/SmartExtractor';
 import { PaymentDetector } from '@/components/ai/PaymentDetector';
 import { FollowUpGenerator } from '@/components/ai/FollowUpGenerator';
 import { Sparkles } from 'lucide-react';
+// 👇 FIXED: Added curly braces {} because we changed the component to a named export
+import { PitchGenerator } from '../components/ai/PitchGenerator'; 
 
 const AITools = () => {
   return (
@@ -20,6 +22,11 @@ const AITools = () => {
 
           {/* Payment Detector */}
           <PaymentDetector />
+
+          {/* ✨ NEW: Pitch Generator ✨ */}
+          <div className="lg:col-span-2">
+            <PitchGenerator />
+          </div>
 
           {/* Follow-Up Generator - Full Width */}
           <div className="lg:col-span-2">
