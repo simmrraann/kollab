@@ -1,77 +1,97 @@
-import { MediaKit } from '@/components/pro/MediaKit';
-import { InvoiceGenerator } from '@/components/pro/InvoiceGenerator';
-import { EmailSync } from '@/components/pro/EmailSync';
+import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { SmartExtractor } from '@/components/ai/SmartExtractor';
 import { PaymentDetector } from '@/components/ai/PaymentDetector';
 import { FollowUpGenerator } from '@/components/ai/FollowUpGenerator';
-import { Sparkles } from 'lucide-react';
-// 👇 FIXED: Added curly braces {} because we changed the component to a named export
-import { PitchGenerator } from '../components/ai/PitchGenerator'; 
+import { PitchGenerator } from '@/components/ai/PitchGenerator';
+import { MediaKit } from '@/components/pro/MediaKit';
+import { InvoiceGenerator } from '@/components/pro/InvoiceGenerator';
+import { EmailSync } from '@/components/pro/EmailSync';
+import { Sparkles, Send, DollarSign, UserCircle } from 'lucide-react';
 
 const AITools = () => {
+  const [activeTab, setActiveTab] = useState('outreach');
+
   return (
     <AppLayout title="AI Tools" subtitle="Intelligent features to streamline your workflow.">
-      <div className="space-y-6">
-        {/* AI Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
-          <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">AI-Powered Features</span>
-        </div>
+      
+      {/* 1. The Tab Navigation */}
+      <div className="flex space-x-2 mb-8 border-b border-border pb-1 overflow-x-auto">
+        <TabButton 
+          id="outreach" 
+          label="Outreach & Deals" 
+          icon={<Send className="w-4 h-4" />} 
+          active={activeTab} 
+          onClick={setActiveTab} 
+        />
+        <TabButton 
+          id="finance" 
+          label="Finance & Payments" 
+          icon={<DollarSign className="w-4 h-4" />} 
+          active={activeTab} 
+          onClick={setActiveTab} 
+        />
+        <TabButton 
+          id="brand" 
+          label="My Brand" 
+          icon={<UserCircle className="w-4 h-4" />} 
+          active={activeTab} 
+          onClick={setActiveTab} 
+        />
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Smart Extractor */}
-          <SmartExtractor />
-
-          {/* Payment Detector */}
-          <PaymentDetector />
-
-          {/* ✨ NEW: Pitch Generator ✨ */}
-          <div className="lg:col-span-2">
-            <PitchGenerator />
-          </div>
-
-          {/* Follow-Up Generator - Full Width */}
-          <div className="lg:col-span-2">
-            <FollowUpGenerator />
-          </div>
+      {/* 2. The Content Area (Changes based on Tab) */}
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        {/* OUTREACH TAB */}
+        {activeTab === 'outreach' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Smart Extractor */}
-          <SmartExtractor />
-
-          {/* Payment Detector */}
-          <PaymentDetector />
-
-          {/* Pitch Generator */}
-          <div className="lg:col-span-2">
-            <PitchGenerator />
-          </div>
-
-          {/* Follow-Up Generator */}
-          <div className="lg:col-span-2">
-            <FollowUpGenerator />
-          </div>
-
-          {/* 👇👇 PASTE YOUR NEW CODE RIGHT HERE 👇👇 */}
-          
-          <div className="lg:col-span-2 border-t border-border pt-8 mt-4">
-            <h3 className="text-xl font-bold mb-6">🚀 Pro Workspace Features</h3>
-            <div className="grid gap-8">
-              <MediaKit />
-              <InvoiceGenerator />
-              <EmailSync />
+            <div className="lg:col-span-2">
+               <PitchGenerator />
+            </div>
+            <div className="lg:col-span-2">
+               <FollowUpGenerator />
             </div>
           </div>
+        )}
 
-          {/* 👆👆 END PASTE 👆👆 */}
+        {/* FINANCE TAB */}
+        {activeTab === 'finance' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SmartExtractor />
+            <PaymentDetector />
+            <div className="lg:col-span-2">
+               <InvoiceGenerator />
+            </div>
+          </div>
+        )}
 
-        </div>
+        {/* BRAND TAB */}
+        {activeTab === 'brand' && (
+          <div className="space-y-6">
+             <MediaKit />
+             <EmailSync />
+          </div>
+        )}
 
-
-        </div>
       </div>
     </AppLayout>
   );
 };
+
+// Simple Helper Component for the Buttons
+const TabButton = ({ id, label, icon, active, onClick }: any) => (
+  <button
+    onClick={() => onClick(id)}
+    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-all ${
+      active === id 
+        ? 'border-primary text-primary bg-primary/5' 
+        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
+    }`}
+  >
+    {icon}
+    {label}
+  </button>
+);
 
 export default AITools;
