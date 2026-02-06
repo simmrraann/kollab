@@ -30,17 +30,17 @@ const Analytics = () => {
 
       // --- CALCULATIONS ---
       
-      // 1. Total Earnings (Sum of Paid)
+      // 1. Total Earnings (Paid Only)
       const paidItems = items.filter(c => c.payment_status === 'Paid');
       const totalEarnings = paidItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
       // 2. Unique Brands
       const uniqueBrands = new Set(items.map(c => c.brand_name?.toLowerCase().trim())).size;
 
-      // 3. Avg per Collab (Total Earnings / Count of Paid Collabs)
+      // 3. Avg per Collab
       const avgPerCollab = paidItems.length > 0 ? Math.round(totalEarnings / paidItems.length) : 0;
 
-      // 4. Completion Rate (Paid / Total * 100)
+      // 4. Completion Rate
       const completionRate = items.length > 0 
         ? Math.round((paidItems.length / items.length) * 100) 
         : 0;
@@ -62,7 +62,8 @@ const Analytics = () => {
   return (
     <AppLayout title="Analytics" subtitle="Deep dive into your collaboration performance.">
       <div className="space-y-6">
-        {/* Summary Stats */}
+        
+        {/* 1. Summary Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard
             title="Total Earnings"
@@ -91,9 +92,9 @@ const Analytics = () => {
           />
         </div>
 
-        {/* Charts */}
-        {/* Pass real data to charts */}
+        {/* 2. Charts Section (Full Width - No Sidebar) */}
         <AnalyticsCharts data={allCollabs} />
+
       </div>
     </AppLayout>
   );

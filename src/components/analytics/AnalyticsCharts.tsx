@@ -4,14 +4,14 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
+import { Instagram, Youtube, Globe, Smartphone } from 'lucide-react';
 
 export const AnalyticsCharts = ({ data }: { data: any[] }) => {
   const { mode } = useTheme();
   
-  // Use CSS Variables so charts follow the theme automatically
+  // Theme Variables
   const getVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const primaryColor = `hsl(${getVar('--primary')})`;
-  const secondaryColor = `hsl(${getVar('--muted')})`; 
   const textColor = mode === 'dark' ? '#94a3b8' : '#64748b';
   const gridColor = mode === 'dark' ? '#334155' : '#e2e8f0';
 
@@ -48,16 +48,44 @@ export const AnalyticsCharts = ({ data }: { data: any[] }) => {
     const delayed = data.filter(c => c.payment_status === 'Delayed').length;
     return [
       { name: 'Paid', value: paid, color: primaryColor },
-      { name: 'Pending', value: pending, color: '#eab308' }, // Yellow fixed for warning
-      { name: 'Delayed', value: delayed, color: '#ef4444' }, // Red fixed for danger
+      { name: 'Pending', value: pending, color: '#eab308' },
+      { name: 'Delayed', value: delayed, color: '#ef4444' },
     ].filter(i => i.value > 0);
   }, [data, primaryColor]);
 
+  // Platform Stats Calculation
+  const platformStats = useMemo(() => {
+      const totals = data.reduce((acc: any, item: any) => {
+          if (item.payment_status === 'Paid') {
+            const p = item.platform || 'Other';
+            acc[p] = (acc[p] || 0) + Number(item.amount);
+          }
+          return acc;
+      }, {});
+      const totalPaid = Object.values(totals).reduce((a: any, b: any) => a + b, 0) as number;
+      return Object.entries(totals)
+        .map(([name, amount]: any) => ({
+            name,
+            amount,
+            percentage: totalPaid > 0 ? Math.round((amount / totalPaid) * 100) : 0
+        }))
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 4);
+  }, [data]);
+
+  const getPlatformIcon = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes('instagram')) return <Instagram className="w-4 h-4 text-pink-500" />;
+    if (n.includes('youtube')) return <Youtube className="w-4 h-4 text-red-600" />;
+    if (n.includes('tiktok')) return <Smartphone className="w-4 h-4 text-foreground" />;
+    return <Globe className="w-4 h-4 text-blue-500" />;
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* CHART 1: CLEAN Area Chart */}
+        {/* TOP ROW: Revenue Trend & Paid vs Pending */}
         <div className="glass-card p-6 rounded-2xl">
            <h3 className="font-bold text-lg mb-4">Revenue Trend</h3>
            <div className="h-[300px]">
@@ -72,16 +100,13 @@ export const AnalyticsCharts = ({ data }: { data: any[] }) => {
                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
                  <XAxis dataKey="name" tick={{fill: textColor}} axisLine={false} tickLine={false} />
                  <YAxis tick={{fill: textColor}} axisLine={false} tickLine={false} tickFormatter={(val)=>`₹${val/1000}k`}/>
-                 <Tooltip 
-                    contentStyle={{backgroundColor: mode === 'dark' ? '#1e293b' : '#fff', borderRadius: '8px', border: '1px solid #334155'}} 
-                 />
+                 <Tooltip contentStyle={{backgroundColor: mode === 'dark' ? '#1e293b' : '#fff', borderRadius: '8px', border: '1px solid #334155'}} />
                  <Area type="monotone" dataKey="paid" stroke={primaryColor} fillOpacity={1} fill="url(#colorPaid)" strokeWidth={3} />
                </AreaChart>
              </ResponsiveContainer>
            </div>
         </div>
 
-        {/* CHART 2: CLEAN Bar Chart (Side by Side) */}
         <div className="glass-card p-6 rounded-2xl">
            <h3 className="font-bold text-lg mb-4">Paid vs Pending</h3>
            <div className="h-[300px]">
@@ -92,22 +117,49 @@ export const AnalyticsCharts = ({ data }: { data: any[] }) => {
                  <YAxis tick={{fill: textColor}} axisLine={false} tickLine={false} />
                  <Tooltip contentStyle={{backgroundColor: mode === 'dark' ? '#1e293b' : '#fff', borderRadius: '8px'}} />
                  <Legend />
-                 {/* Primary Theme Color for Paid */}
                  <Bar dataKey="paid" name="Paid" fill={primaryColor} radius={[4, 4, 0, 0]} />
-                 {/* Grey/Muted for Pending to differentiate */}
                  <Bar dataKey="pending" name="Pending" fill={mode === 'dark' ? '#475569' : '#cbd5e1'} radius={[4, 4, 0, 0]} />
                </BarChart>
              </ResponsiveContainer>
            </div>
         </div>
 
-        {/* CHART 3: Donut Chart */}
-        <div className="glass-card p-6 rounded-2xl lg:col-span-2 flex flex-col md:flex-row items-center justify-around">
-           <div className="mb-6 md:mb-0">
-               <h3 className="font-bold text-lg mb-2">Payment Status</h3>
-               <p className="text-sm text-muted-foreground">Distribution of your payments</p>
+        {/* BOTTOM ROW: Revenue by Platform (Left) + Donut (Right) */}
+        <div className="glass-card p-6 rounded-2xl lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+           
+           {/* LEFT: Revenue List */}
+           <div>
+               <h3 className="font-bold text-lg mb-6">Revenue by Platform</h3>
+               <div className="space-y-5">
+                   {platformStats.length === 0 ? (
+                       <p className="text-muted-foreground text-sm">No revenue data available yet.</p>
+                   ) : (
+                       platformStats.map((p) => (
+                           <div key={p.name} className="space-y-2">
+                               <div className="flex justify-between text-sm">
+                                   <div className="flex items-center gap-2 font-medium">
+                                       {getPlatformIcon(p.name)}
+                                       <span className="capitalize">{p.name}</span>
+                                   </div>
+                                   <div className="flex items-center gap-2">
+                                       <span className="font-bold">₹{p.amount.toLocaleString()}</span>
+                                       <span className="text-xs text-muted-foreground">({p.percentage}%)</span>
+                                   </div>
+                               </div>
+                               <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                                   <div 
+                                       className="h-full bg-primary rounded-full transition-all duration-1000" 
+                                       style={{ width: `${p.percentage}%`, opacity: 0.8 }} 
+                                   />
+                               </div>
+                           </div>
+                       ))
+                   )}
+               </div>
            </div>
-           <div className="h-[250px] w-[300px]">
+
+           {/* RIGHT: Donut Chart */}
+           <div className="h-[250px] w-full flex justify-center items-center relative">
              <ResponsiveContainer width="100%" height="100%">
                <PieChart>
                  <Pie
@@ -127,7 +179,14 @@ export const AnalyticsCharts = ({ data }: { data: any[] }) => {
                  <Legend verticalAlign="bottom" height={36}/>
                </PieChart>
              </ResponsiveContainer>
+             <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
+                 <div className="text-center">
+                     <span className="text-2xl font-bold">{data.length}</span>
+                     <p className="text-xs text-muted-foreground">Total Deals</p>
+                 </div>
+             </div>
            </div>
+
         </div>
 
       </div>
