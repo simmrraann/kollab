@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 // --- TYPES ---
 interface CalendarEvent {
   id: string;
-  collabId: string; // Link back to the main collab
+  collabId: string;
   title: string;
   date: Date;
   type: 'posting' | 'payment';
@@ -23,20 +23,16 @@ interface CalendarEvent {
 const getPlatformStyle = (platform: string, type: 'posting' | 'payment') => {
   const p = platform.toLowerCase();
   
-  // Base style for the chip
   const base = "text-[10px] px-1.5 py-1 rounded truncate font-medium shadow-sm border border-white/10 transition-transform hover:scale-105";
 
-  // If it's a payment event, make it Green regardless of platform (Money is Money!)
   if (type === 'payment') {
     return cn(base, "bg-gradient-to-r from-emerald-500 to-green-600 text-white");
   }
 
-  // Platform specific gradients for Posting
   if (p.includes('instagram')) return cn(base, "bg-gradient-to-r from-purple-500 to-pink-500 text-white");
   if (p.includes('youtube')) return cn(base, "bg-gradient-to-r from-red-500 to-red-700 text-white");
   if (p.includes('tiktok')) return cn(base, "bg-gradient-to-r from-slate-900 to-cyan-900 text-cyan-50");
   
-  // Default
   return cn(base, "bg-secondary text-secondary-foreground");
 };
 
@@ -47,7 +43,9 @@ const Calendar = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  // We store "Events" which are processed derived from Collaborations
+  // 🔍 NEW: Search State
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const [events, setEvents] = useState<CalendarEvent[]>([]);
 
   // Form State
@@ -60,10 +58,9 @@ const Calendar = () => {
   });
   const [saving, setSaving] = useState(false);
 
-  // --- 1. FETCH DATA ---
   useEffect(() => {
     fetchCalendarData();
-  }, [user]); // Re-fetch if user changes
+  }, [user]); 
 
   const fetchCalendarData = async () => {
     try {
@@ -72,11 +69,9 @@ const Calendar = () => {
       
       if (error) throw error;
 
-      // Transform Database Rows into Calendar Events
       const processedEvents: CalendarEvent[] = [];
 
       data?.forEach((collab) => {
-        // 1. Add Posting Date Event
         if (collab.posting_date) {
           processedEvents.push({
             id: `${collab.id}-post`,
@@ -89,7 +84,6 @@ const Calendar = () => {
             amount: collab.amount
           });
         }
-        // 2. Add Payment Due Date Event
         if (collab.payment_due_date) {
            processedEvents.push({
             id: `${collab.id}-pay`,
@@ -112,16 +106,11 @@ const Calendar = () => {
     }
   };
 
-  // --- 2. SAVE DATA ---
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate || !user) return;
     
     setSaving(true);
-
-    // Prepare payload. 
-    // Note: Since they clicked a specific date on the calendar, 
-    // we assume that is the Posting Date.
     const payload = {
       user_id: user.id,
       brand_name: formData.brand,
@@ -129,8 +118,7 @@ const Calendar = () => {
       deliverable: formData.deliverable,
       amount: Number(formData.amount),
       payment_status: formData.status,
-      posting_date: selectedDate.toISOString().split('T')[0], // YYYY-MM-DD
-      // Default payment due date to 30 days later (optional smart feature)
+      posting_date: selectedDate.toISOString().split('T')[0],
       payment_due_date: new Date(selectedDate.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
     };
 
@@ -142,13 +130,11 @@ const Calendar = () => {
       toast.success("Collaboration added to calendar!");
       setIsModalOpen(false);
       setFormData({ brand: '', platform: 'Instagram', deliverable: '', amount: '', status: 'Pending' });
-      fetchCalendarData(); // Refresh calendar
+      fetchCalendarData(); 
     }
     setSaving(false);
   };
 
-
-  // --- CALENDAR LOGIC ---
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
 
@@ -166,8 +152,19 @@ const Calendar = () => {
     });
   };
 
+  // 🔍 Helper: Check if a day has a matching search result
+  const doesDayMatchSearch = (dayEvents: CalendarEvent[]) => {
+    if (!searchTerm) return false;
+    return dayEvents.some(e => e.title.toLowerCase().includes(searchTerm.toLowerCase()));
+  };
+
   return (
-    <AppLayout title="Calendar" subtitle="Visualize your content & income timeline.">
+    // 1. Pass setSearchTerm to AppLayout to show the bar
+    <AppLayout 
+        title="Calendar" 
+        subtitle="Visualize your content & income timeline."
+        onSearch={setSearchTerm} 
+    >
       <div className="glass-card p-6 rounded-xl animate-fade-in">
         
         {/* Header */}
@@ -213,13 +210,22 @@ const Calendar = () => {
             const dayEvents = getEventsForDay(day);
             const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth();
             
+            // ✨ THE MAGIC: Check if this day matches the search
+            const isMatch = doesDayMatchSearch(dayEvents);
+            const isDimmed = searchTerm && !isMatch; // Dim days that don't match
+
             return (
               <div 
                 key={day} 
                 onClick={() => handleDateClick(day)}
                 className={cn(
                     "min-h-[120px] p-3 rounded-xl border transition-all cursor-pointer relative group flex flex-col gap-1",
-                    isToday ? "border-primary bg-primary/5 shadow-sm" : "bg-card hover:border-primary/50"
+                    // Apply Glow if matched
+                    isMatch ? "ring-2 ring-primary ring-offset-2 bg-primary/10 border-primary shadow-[0_0_15px_rgba(var(--primary),0.3)] z-10 scale-[1.02]" : "",
+                    // Dim unrelated days
+                    isDimmed ? "opacity-30 grayscale scale-95" : "",
+                    // Standard styles
+                    !isMatch && isToday ? "border-primary bg-primary/5 shadow-sm" : "bg-card hover:border-primary/50"
                 )}
               >
                 <span className={cn(
@@ -231,14 +237,18 @@ const Calendar = () => {
 
                 {/* Event Chips */}
                 <div className="flex flex-col gap-1.5 overflow-y-auto custom-scrollbar max-h-[80px]">
-                  {dayEvents.map((event, idx) => (
-                    <div key={idx} className={getPlatformStyle(event.platform, event.type)}>
-                      {event.title}
-                    </div>
-                  ))}
+                  {dayEvents.map((event, idx) => {
+                     // Highlight specific chip if searching
+                     const isChipMatch = searchTerm ? event.title.toLowerCase().includes(searchTerm.toLowerCase()) : true;
+                     
+                     return (
+                        <div key={idx} className={cn(getPlatformStyle(event.platform, event.type), !isChipMatch && searchTerm && "opacity-50")}>
+                        {event.title}
+                        </div>
+                     );
+                  })}
                 </div>
                 
-                {/* Add Hint on Hover */}
                 <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Plus className="w-4 h-4 text-muted-foreground" />
                 </div>
@@ -248,7 +258,7 @@ const Calendar = () => {
         </div>
       </div>
 
-      {/* --- ADD EVENT MODAL --- */}
+      {/* --- ADD EVENT MODAL (Unchanged) --- */}
       {isModalOpen && selectedDate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-background border w-full max-w-md p-6 rounded-2xl shadow-2xl scale-100">
@@ -275,7 +285,6 @@ const Calendar = () => {
                </div>
 
                <div className="grid grid-cols-2 gap-4">
-                   {/* Platform */}
                    <div className="space-y-1.5">
                       <label className="text-xs font-semibold uppercase text-muted-foreground">Platform</label>
                       <select className="w-full rounded-lg border bg-secondary/30 px-3 py-2.5 text-sm outline-none" 
@@ -287,7 +296,6 @@ const Calendar = () => {
                         <option>Other</option>
                       </select>
                    </div>
-                   {/* Amount */}
                    <div className="space-y-1.5">
                       <label className="text-xs font-semibold uppercase text-muted-foreground">Amount (₹)</label>
                       <input type="number" required className="w-full rounded-lg border bg-secondary/30 px-3 py-2.5 text-sm outline-none" 
@@ -297,7 +305,6 @@ const Calendar = () => {
                    </div>
                </div>
 
-               {/* Deliverable */}
                <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase text-muted-foreground">Deliverable</label>
                   <input className="w-full rounded-lg border bg-secondary/30 px-3 py-2.5 text-sm outline-none" 

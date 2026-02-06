@@ -13,8 +13,8 @@ const Collaborations = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [viewMode, setViewMode] = useState<'table' | 'board'>('table');
   const [allData, setAllData] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState(''); // 1. New State for Search
   
-  // 🆕 NEW: State to store the item we want to edit
   const [editingCollab, setEditingCollab] = useState<any | null>(null);
 
   useEffect(() => {
@@ -25,26 +25,36 @@ const Collaborations = () => {
     fetchData();
   }, [refreshKey]);
 
-  // 🆕 NEW: Handler for clicking "Edit"
+  // 2. The Filter Logic (Filters by Brand Name)
+  const filteredData = allData.filter(collab => 
+    collab.brand_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    collab.platform?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const handleEdit = (collab: any) => {
-    setEditingCollab(collab); // Save the data
-    setShowForm(true);        // Open the modal
+    setEditingCollab(collab); 
+    setShowForm(true);        
   };
 
   const handleSuccess = () => {
     toast.success(editingCollab ? "Collaboration updated!" : "Collaboration saved!");
     setRefreshKey(prev => prev + 1);
     setShowForm(false);
-    setEditingCollab(null); // Clear edit state
+    setEditingCollab(null); 
   };
 
   const handleClose = () => {
     setShowForm(false);
-    setEditingCollab(null); // Clear edit state on close
+    setEditingCollab(null); 
   };
 
   return (
-    <AppLayout title="Collaborations" subtitle="Manage all your brand partnerships.">
+    // 3. Pass setSearchTerm to AppLayout so the Header can use it
+    <AppLayout 
+      title="Collaborations" 
+      subtitle="Manage all your brand partnerships."
+      onSearch={setSearchTerm} 
+    >
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex bg-secondary/50 p-1 rounded-lg w-fit">
@@ -74,17 +84,22 @@ const Collaborations = () => {
                <CollabForm 
                  onClose={handleClose} 
                  onSuccess={handleSuccess} 
-                 initialData={editingCollab} // 🆕 Pass the data to the form
+                 initialData={editingCollab} 
                />
              </div>
           </div>
         )}
 
+        {/* 4. Pass 'filteredData' to your views */}
         {viewMode === 'table' ? (
-           <CollabTable keyProp={refreshKey} onEdit={handleEdit} /> 
+           <CollabTable 
+             keyProp={refreshKey} 
+             onEdit={handleEdit} 
+             data={filteredData} // Note: Passing data here.
+           /> 
         ) : (
            <div className="animate-in fade-in slide-in-from-bottom-2">
-             <CollabKanban data={allData} />
+             <CollabKanban data={filteredData} />
            </div>
         )}
       </div>
