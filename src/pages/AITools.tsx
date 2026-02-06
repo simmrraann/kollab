@@ -4,10 +4,8 @@ import { SmartExtractor } from '@/components/ai/SmartExtractor';
 import { PaymentDetector } from '@/components/ai/PaymentDetector';
 import { FollowUpGenerator } from '@/components/ai/FollowUpGenerator';
 import { PitchGenerator } from '@/components/ai/PitchGenerator';
-import { MediaKit } from '@/components/pro/MediaKit';
 import { InvoiceGenerator } from '@/components/pro/InvoiceGenerator';
-import { EmailSync } from '@/components/pro/EmailSync';
-import { Sparkles, Send, DollarSign, UserCircle } from 'lucide-react';
+import { Send, DollarSign } from 'lucide-react';
 
 const AITools = () => {
   const [activeTab, setActiveTab] = useState('outreach');
@@ -15,7 +13,7 @@ const AITools = () => {
   return (
     <AppLayout title="AI Tools" subtitle="Intelligent features to streamline your workflow.">
       
-      {/* 1. The Tab Navigation */}
+      {/* 1. The Tab Navigation (Cleaned) */}
       <div className="flex space-x-2 mb-8 border-b border-border pb-1 overflow-x-auto">
         <TabButton 
           id="outreach" 
@@ -31,16 +29,9 @@ const AITools = () => {
           active={activeTab} 
           onClick={setActiveTab} 
         />
-        <TabButton 
-          id="brand" 
-          label="My Brand" 
-          icon={<UserCircle className="w-4 h-4" />} 
-          active={activeTab} 
-          onClick={setActiveTab} 
-        />
       </div>
 
-      {/* 2. The Content Area (Changes based on Tab) */}
+      {/* 2. The Content Area */}
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         {/* OUTREACH TAB */}
@@ -63,14 +54,6 @@ const AITools = () => {
             <div className="lg:col-span-2">
                <InvoiceGenerator />
             </div>
-          </div>
-        )}
-
-        {/* BRAND TAB */}
-        {activeTab === 'brand' && (
-          <div className="space-y-6">
-             <MediaKit />
-             <EmailSync />
           </div>
         )}
 

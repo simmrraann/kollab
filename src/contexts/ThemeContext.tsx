@@ -8,6 +8,7 @@ interface ThemeContextType {
   mode: Mode;
   setTheme: (theme: Theme) => void;
   toggleMode: () => void;
+  cycleTheme: () => void; // <--- NEW FUNCTION
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -23,10 +24,10 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     root.classList.remove("light", "dark", "royal-muse", "steel-valor", "sage-studio");
     
     // 2. Add Active Classes
-    root.classList.add(mode); // Adds 'dark' or 'light'
-    root.classList.add(theme); // Adds 'royal-muse', etc.
+    root.classList.add(mode); 
+    root.classList.add(theme);
     
-    // 3. Force style update for charts
+    // 3. Force style update
     root.style.colorScheme = mode;
 
     // 4. Save
@@ -36,8 +37,17 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const toggleMode = () => setMode((prev) => (prev === "light" ? "dark" : "light"));
 
+  // --- NEW: LOGIC TO CYCLE THEMES ---
+  const cycleTheme = () => {
+    setTheme((prev) => {
+      if (prev === "royal-muse") return "sage-studio"; // Pink -> Green
+      if (prev === "sage-studio") return "steel-valor"; // Green -> Blue
+      return "royal-muse"; // Blue -> Pink
+    });
+  };
+
   return (
-    <ThemeContext.Provider value={{ theme, mode, setTheme, toggleMode }}>
+    <ThemeContext.Provider value={{ theme, mode, setTheme, toggleMode, cycleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

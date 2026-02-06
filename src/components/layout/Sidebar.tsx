@@ -1,11 +1,19 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, Calendar, BarChart2, Sparkles, Settings, LogOut, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Calendar, BarChart2, Sparkles, Settings, Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/contexts/ThemeContext'; // Import theme hook
+import { useTheme } from '@/contexts/ThemeContext';
 
 export const Sidebar = () => {
   const location = useLocation();
-  const { mode, toggleMode } = useTheme();
+  const { mode, toggleMode, theme, cycleTheme } = useTheme();
+
+  // --- LOGIC: CHOOSE IMAGE BASED ON THEME ---
+  const getLogoImage = () => {
+    // These must match the exact file names in your /public folder
+    if (theme === 'sage-studio') return '/logo-green.jpg';
+    if (theme === 'steel-valor') return '/logo-blue.jpg';
+    return '/logo-pink.jpg'; // default royal-muse
+  };
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -16,14 +24,36 @@ export const Sidebar = () => {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-card border-r z-50 hidden md:flex flex-col">
-      {/* Logo Area */}
-      <div className="p-6 border-b flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
-           K
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-card border-r z-50 hidden md:flex flex-col transition-colors duration-300">
+      
+      {/* --- CLICKABLE LOGO AREA --- */}
+      <div 
+        className="p-6 border-b flex items-center gap-3 group cursor-pointer" 
+        onClick={cycleTheme}
+        title="Click to switch theme!"
+      >
+        
+        {/* Container */}
+        <div className="relative w-12 h-12 shrink-0 rounded-full overflow-hidden border-2 border-border shadow-sm group-hover:border-primary transition-colors bg-white">
+          <img 
+            key={theme} 
+            src={getLogoImage()} 
+            alt="Kollab Mascot"
+            // Added onError to help debug if it fails again
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'; // Hide if broken
+              console.error("Image failed to load:", getLogoImage());
+            }}
+            className="w-full h-full object-cover object-center scale-105 hover:scale-115 transition-transform duration-500" 
+          />
         </div>
-        <span className="font-bold text-xl tracking-tight">Kollab</span>
+
+        {/* Text */}
+        <span className="font-black text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+          Kollab
+        </span>
       </div>
+      {/* ---------------------------------- */}
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -34,13 +64,15 @@ export const Sidebar = () => {
               key={item.path}
               to={item.path}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative overflow-hidden",
                 isActive 
                   ? "bg-primary/10 text-primary shadow-sm" 
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground"
               )}
             >
-              <item.icon className={cn("w-5 h-5", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
+              {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />}
+              
+              <item.icon className={cn("w-5 h-5 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
               {item.label}
             </Link>
           );
@@ -48,14 +80,13 @@ export const Sidebar = () => {
       </nav>
 
       {/* Bottom Section */}
-      <div className="p-4 border-t space-y-2">
-         {/* Dark Mode Toggle (Mini) */}
+      <div className="p-4 border-t space-y-2 bg-card/50">
          <button 
-           onClick={toggleMode}
-           className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+           onClick={(e) => { e.stopPropagation(); toggleMode(); }} 
+           className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors border border-transparent hover:border-border"
          >
             <span className="flex items-center gap-2">
-               {mode === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+               {mode === 'dark' ? <Moon className="w-4 h-4 text-blue-400" /> : <Sun className="w-4 h-4 text-orange-400" />}
                {mode === 'dark' ? 'Dark Mode' : 'Light Mode'}
             </span>
          </button>
