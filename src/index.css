@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* 🌸 DEFAULT THEME: ROYAL MUSE (Visibly Pink) */
+    /* Changed to a richer Rose tint (Lighter but clearly pink) */
+    --background: 340 82% 96%; 
+    --foreground: 222.2 84% 4.9%;
+
+    /* Keep cards PURE WHITE to pop against the pink */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 290 80% 55%; 
+    --primary-foreground: 210 40% 98%;
+    --secondary: 290 20% 94%; /* Slightly darker for contrast */
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 290 30% 94%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 340 30% 90%; /* Pinkish border to match */
+    --input: 340 30% 90%;
+    --ring: 290 80% 55%;
+    --radius: 0.75rem;
+  }
+
+  /* 🛡️ STEEL VALOR (Visibly Sky Blue) */
+  .steel-valor {
+    /* Changed to a clear Sky Blue tint */
+    --background: 210 80% 96%; 
+    
+    --primary: 221.2 83.2% 53.3%;
+    --ring: 221.2 83.2% 53.3%;
+    --secondary: 210 40% 93%;
+    --accent: 210 40% 93%;
+    --border: 210 30% 90%; /* Blueish border */
+    --input: 210 30% 90%;
+  }
+
+  /* 🌿 SAGE STUDIO (Visibly Mint) */
+  .sage-studio {
+    /* Clear Mint Green tint */
+    --background: 145 60% 96%;
+
+    --primary: 142.1 76.2% 36.3%;
+    --ring: 142.1 76.2% 36.3%;
+    --secondary: 140 30% 94%;
+    --accent: 140 30% 94%;
+    --border: 140 30% 90%;
+    --input: 140 30% 90%;
+  }
+
+  /* 🌑 DARK MODE (Overrides everything with Deep Grey/Black) */
+  .dark {
+    --background: 222.2 84% 4.9%; /* Deep Dark Blue/Black */
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 6.9%; /* Slightly lighter than bg for layering */
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 290 70% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+  }
+  
+  /* Dark Mode + Theme Specific adjustments */
+  .dark.steel-valor {
+    --primary: 217.2 91.2% 59.8%;
+    --ring: 217.2 91.2% 59.8%;
+    --background: 222.2 84% 4.9%; 
+  }
+  
+  .dark.sage-studio {
+    --primary: 142.1 70.6% 45.3%;
+    --ring: 142.1 70.6% 45.3%;
+    --background: 222.2 84% 4.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground transition-colors duration-300;
+  }
+}
+
+/* Glass effect remains the same, but now sits on top of colors! */
+.glass-card {
+  @apply bg-card/80 backdrop-blur-md border border-border/50 shadow-sm;
+}
