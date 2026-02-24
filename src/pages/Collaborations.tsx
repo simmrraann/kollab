@@ -5,7 +5,7 @@ import { CollabForm } from '@/components/collaborations/CollabForm';
 import { CollabTable } from '@/components/collaborations/CollabTable';
 import { CollabKanban } from '@/components/collaborations/CollabKanban';
 import { Button } from '@/components/ui/button';
-import { Plus, LayoutGrid, List, CheckCircle2, Clock } from 'lucide-react'; // Added Icons
+import { Plus, LayoutGrid, List, CheckCircle2, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Collaborations = () => {
@@ -24,6 +24,13 @@ const Collaborations = () => {
     fetchData();
   }, [refreshKey]);
 
+  // --- OPTIMISTIC UPDATE LOGIC ---
+  const handleMove = (id: string, newStatus: string) => {
+    setAllData(prev => 
+      prev.map(item => item.id === id ? { ...item, payment_status: newStatus } : item)
+    );
+  };
+
   const filteredData = allData.filter(collab => 
     collab.brand_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     collab.platform?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -31,7 +38,7 @@ const Collaborations = () => {
 
   const handleEdit = (collab: any) => {
     setEditingCollab(collab); 
-    setShowForm(true);        
+    setShowForm(true);         
   };
 
   const handleSuccess = () => {
@@ -46,13 +53,9 @@ const Collaborations = () => {
     setEditingCollab(null); 
   };
 
-  // --- NEW: Toggle "Done" status (Tick Mark Logic) ---
   const toggleStatus = async (id: string, currentStatus: string) => {
      const newStatus = currentStatus === 'Posted' ? 'Pending' : 'Posted';
-     
-     // Optimistic Update (Immediate UI feedback)
      setAllData(prev => prev.map(item => item.id === id ? {...item, status: newStatus} : item));
-
      const { error } = await supabase.from('collaborations').update({ status: newStatus }).eq('id', id);
      if(error) toast.error("Failed to update status");
      else toast.success(newStatus === 'Posted' ? "Marked as Done! 🎉" : "Marked as Pending");
@@ -66,8 +69,6 @@ const Collaborations = () => {
     >
       <div className="space-y-4 md:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4">
-          
-          {/* View Toggles - Hidden on Mobile */}
           <div className="hidden md:flex bg-secondary/50 p-1 rounded-lg w-fit">
             <button 
               onClick={() => setViewMode('table')}
@@ -87,7 +88,7 @@ const Collaborations = () => {
 
           <Button onClick={() => setShowForm(true)} className="btn-calm w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
-            <span className="">Add Collaboration</span>
+            <span>Add Collaboration</span>
           </Button>
         </div>
 
@@ -103,7 +104,6 @@ const Collaborations = () => {
           </div>
         )}
 
-        {/* --- 1. MOBILE ONLY VIEW (CARDS WITH TICK MARK) --- */}
         <div className="md:hidden space-y-3">
            {filteredData.map((collab) => (
               <div key={collab.id} className="bg-card border rounded-xl p-4 shadow-sm flex justify-between items-center active:scale-[0.98] transition-transform">
@@ -117,8 +117,6 @@ const Collaborations = () => {
                     </div>
                     <div className="mt-2 font-mono text-sm font-semibold text-primary">{collab.amount ? `₹${collab.amount}` : 'Barter'}</div>
                  </div>
-
-                 {/* THE TICK MARK SECTION */}
                  <button 
                    onClick={() => toggleStatus(collab.id, collab.status)}
                    className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${collab.status === 'Posted' ? 'bg-green-500 border-green-500 text-white' : 'border-muted-foreground/30 text-transparent hover:border-primary'}`}
@@ -129,7 +127,6 @@ const Collaborations = () => {
            ))}
         </div>
 
-        {/* --- 2. DESKTOP ONLY VIEW (TABLE/BOARD) --- */}
         <div className="hidden md:block">
            {viewMode === 'table' ? (
               <CollabTable 
@@ -139,7 +136,10 @@ const Collaborations = () => {
               /> 
            ) : (
               <div className="animate-in fade-in slide-in-from-bottom-2">
-                <CollabKanban data={filteredData} />
+                <CollabKanban 
+                  data={filteredData} 
+                  onMove={handleMove} // 👈 Added this prop
+                />
               </div>
            )}
         </div>
