@@ -23,7 +23,7 @@ interface CalendarEvent {
 const getPlatformStyle = (platform: string, type: 'posting' | 'payment') => {
   const p = platform.toLowerCase();
   
-  const base = "text-[10px] px-1.5 py-1 rounded truncate font-medium shadow-sm border border-white/10 transition-transform hover:scale-105";
+  const base = "text-[8px] md:text-[10px] px-1 md:px-1.5 py-0.5 md:py-1 rounded-sm md:rounded truncate font-medium shadow-sm border border-white/10 transition-transform hover:scale-105 leading-tight";
 
   if (type === 'payment') {
     return cn(base, "bg-gradient-to-r from-emerald-500 to-green-600 text-white");
@@ -165,7 +165,7 @@ const Calendar = () => {
         subtitle="Visualize your content & income timeline."
         onSearch={setSearchTerm} 
     >
-      <div className="glass-card p-3 md:p-6 rounded-xl md:rounded-2xl animate-fade-in">
+      <div className="glass-card p-2 md:p-6 rounded-xl md:rounded-2xl animate-fade-in">
         
         {/* Header - Mobile optimized */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4 mb-4 md:mb-8">
@@ -189,21 +189,21 @@ const Calendar = () => {
         </div>
 
         {/* Legend - Mobile optimized */}
-        <div className="flex flex-wrap gap-2 md:gap-4 mb-4 md:mb-6 text-xs text-muted-foreground">
+        <div className="flex flex-wrap gap-2 md:gap-4 mb-4 md:mb-6 text-[10px] md:text-xs text-muted-foreground">
              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-purple-500"></div> <span className="hidden sm:inline">Instagram</span><span className="sm:hidden">IG</span></div>
              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-600"></div> <span className="hidden sm:inline">YouTube</span><span className="sm:hidden">YT</span></div>
              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> <span className="hidden sm:inline">Payment Due</span><span className="sm:hidden">Pay</span></div>
         </div>
 
         {/* Grid - Mobile: responsive gap, Desktop: standard */}
-        <div className="grid grid-cols-7 gap-2 md:gap-4 mb-4 text-center text-xs md:text-sm font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="grid grid-cols-7 gap-1 md:gap-4 mb-2 md:mb-4 text-center text-[10px] md:text-sm font-medium text-muted-foreground uppercase tracking-wider">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day} className="hidden sm:block">{day}</div>)}
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => <div key={`mobile-${idx}`} className="sm:hidden">{day}</div>)}
         </div>
         
-        <div className="grid grid-cols-7 gap-2 md:gap-4">
+        <div className="grid grid-cols-7 gap-1 md:gap-4">
           {/* Empty Slots */}
-          {Array.from({ length: firstDayOfMonth }).map((_, i) => <div key={`empty-${i}`} className="min-h-[80px] md:min-h-[120px] bg-secondary/10 rounded-lg md:rounded-xl opacity-50" />)}
+          {Array.from({ length: firstDayOfMonth }).map((_, i) => <div key={`empty-${i}`} className="min-h-[60px] md:min-h-[120px] bg-secondary/10 rounded-md md:rounded-xl opacity-50" />)}
           
           {/* Days */}
           {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -220,7 +220,7 @@ const Calendar = () => {
                 key={day} 
                 onClick={() => handleDateClick(day)}
                 className={cn(
-                    "min-h-[80px] md:min-h-[120px] p-2 md:p-3 rounded-lg md:rounded-xl border transition-all cursor-pointer relative group flex flex-col gap-1",
+                    "min-h-[60px] md:min-h-[120px] p-1 md:p-3 rounded-md md:rounded-xl border transition-all cursor-pointer relative group flex flex-col gap-0.5 md:gap-1",
                     // Apply Glow if matched
                     isMatch ? "ring-2 ring-primary ring-offset-2 bg-primary/10 border-primary shadow-[0_0_15px_rgba(var(--primary),0.3)] z-10 scale-[1.02]" : "",
                     // Dim unrelated days
@@ -230,28 +230,28 @@ const Calendar = () => {
                 )}
               >
                 <span className={cn(
-                    "text-xs md:text-sm font-semibold w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full mb-1",
+                    "text-[10px] md:text-sm font-semibold w-4 h-4 md:w-7 md:h-7 flex items-center justify-center rounded-full mb-0.5 md:mb-1",
                     isToday ? "bg-primary text-white" : "text-muted-foreground group-hover:text-foreground"
                 )}>
                     {day}
                 </span>
 
                 {/* Event Chips */}
-                <div className="flex flex-col gap-1 overflow-y-auto custom-scrollbar max-h-[50px] md:max-h-[80px]">
+                <div className="flex flex-col gap-0.5 md:gap-1 overflow-y-auto custom-scrollbar max-h-[35px] md:max-h-[80px]">
                   {dayEvents.map((event, idx) => {
                      // Highlight specific chip if searching
                      const isChipMatch = searchTerm ? event.title.toLowerCase().includes(searchTerm.toLowerCase()) : true;
                      
                      return (
-                        <div key={idx} className={cn(getPlatformStyle(event.platform, event.type), "text-[9px] md:text-[10px] px-1 md:px-1.5 py-0.5 md:py-1", !isChipMatch && searchTerm && "opacity-50")}>
-                        <span className="truncate">{event.title}</span>
+                        <div key={idx} className={cn(getPlatformStyle(event.platform, event.type), !isChipMatch && searchTerm && "opacity-50")}>
+                        <span className="truncate block">{event.title}</span>
                         </div>
                      );
                   })}
                 </div>
                 
-                <div className="absolute top-2 md:top-3 right-2 md:right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Plus className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground" />
+                <div className="absolute top-1 md:top-3 right-1 md:right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Plus className="w-2 h-2 md:w-4 md:h-4 text-muted-foreground" />
                 </div>
               </div>
             );

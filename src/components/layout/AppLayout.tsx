@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, Palette, BarChart2, Search } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Palette, BarChart2, Search, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
@@ -18,6 +18,7 @@ export const AppLayout = ({ children, title, subtitle, onSearch }: AppLayoutProp
     { icon: LayoutDashboard, label: 'Home', path: '/' },
     { icon: Briefcase, label: 'Collabs', path: '/collaborations' },
     { icon: Palette, label: 'Studio', path: '/studio' }, // Center item
+    { icon: CalendarIcon, label: 'Calendar', path: '/calendar' },
     { icon: BarChart2, label: 'Stats', path: '/analytics' },
   ];
 
@@ -59,7 +60,7 @@ export const AppLayout = ({ children, title, subtitle, onSearch }: AppLayoutProp
 
       {/* 3. MOBILE BOTTOM NAVIGATION (Visible only on Mobile) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t z-50 pb-safe">
-        <div className="flex justify-around items-center h-16 px-2">
+        <div className="flex justify-around items-center h-16 px-1">
           {mobileNavItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
