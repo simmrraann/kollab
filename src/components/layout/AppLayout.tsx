@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, Palette, BarChart2, Search, Calendar as CalendarIcon } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Palette, BarChart2, Search, Calendar as CalendarIcon, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
@@ -33,9 +33,21 @@ export const AppLayout = ({ children, title, subtitle, onSearch }: AppLayoutProp
         
         {/* Header (Desktop & Mobile) */}
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b px-4 md:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{title || 'Kollab'}</h1>
-            {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+          
+          {/* Top Row: Title + Mobile Settings Icon */}
+          <div className="flex justify-between items-center w-full md:w-auto">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">{title || 'Kollab'}</h1>
+              {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+            </div>
+
+            {/* ⚙️ MOBILE SETTINGS ICON (Hidden on Desktop) */}
+            <Link 
+              to="/settings" 
+              className="md:hidden p-2.5 bg-secondary/50 hover:bg-secondary rounded-full transition-colors flex items-center justify-center shadow-sm"
+            >
+              <Settings className="w-5 h-5 text-foreground" />
+            </Link>
           </div>
 
           {/* Search Bar */}
