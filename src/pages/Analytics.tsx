@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AnalyticsCharts } from '@/components/analytics/AnalyticsCharts';
 import { StatsCard } from '@/components/dashboard/StatsCard';
-import { TrendingUp, Users, DollarSign, Target } from 'lucide-react';
+import { TrendingUp, Users, IndianRupee, Target } from 'lucide-react';
 
 const Analytics = () => {
   const [loading, setLoading] = useState(true);
@@ -69,7 +69,7 @@ const Analytics = () => {
             title="Total Earnings"
             value={`₹${stats.totalEarnings.toLocaleString()}`}
             subtitle="Lifetime earnings"
-            icon={<DollarSign className="w-5 h-5" />}
+            icon={<IndianRupee className="w-5 h-5" />}
           />
           <StatsCard
             title="Brand Partners"
