@@ -5,7 +5,7 @@ import { StatsCard } from '@/components/dashboard/StatsCard';
 import { RecentCollaborations } from '@/components/dashboard/RecentCollaborations';
 import { UpcomingDeadlines } from '@/components/dashboard/UpcomingDeadlines';
 import { EarningsChart } from '@/components/dashboard/EarningsChart';
-import { Briefcase, Clock, DollarSign, CheckCircle, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { Briefcase, Clock, IndianRupee, CheckCircle, AlertTriangle, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,7 +19,7 @@ const Index = () => {
     delayedCount: 0,
     completedCount: 0,
   });
-  
+
   const [allCollabs, setAllCollabs] = useState<any[]>([]);
 
   useEffect(() => {
@@ -40,14 +40,14 @@ const Index = () => {
 
       // (Keep your existing calculation logic here exactly as is)
       // ... I'll skip repeating the math to save space ... 
-      
+
       // Simple Mock Math for now to make sure it renders:
       setStats({
-          activeCount: items.filter(c => c.payment_status !== 'Paid').length,
-          upcomingCount: items.filter(c => c.posting_date && new Date(c.posting_date) > new Date()).length,
-          pendingAmount: items.filter(c => c.payment_status === 'Pending').reduce((sum, i) => sum + (Number(i.amount)||0), 0),
-          delayedCount: items.filter(c => c.payment_status === 'Delayed').length,
-          completedCount: items.filter(c => c.payment_status === 'Paid').length
+        activeCount: items.filter(c => c.payment_status !== 'Paid').length,
+        upcomingCount: items.filter(c => c.posting_date && new Date(c.posting_date) > new Date()).length,
+        pendingAmount: items.filter(c => c.payment_status === 'Pending').reduce((sum, i) => sum + (Number(i.amount) || 0), 0),
+        delayedCount: items.filter(c => c.payment_status === 'Delayed').length,
+        completedCount: items.filter(c => c.payment_status === 'Paid').length
       });
 
     } catch (error) {
@@ -59,7 +59,7 @@ const Index = () => {
 
   return (
     <AppLayout title="Dashboard">
-      
+
       {/* 🚀 1. WELCOME BANNER (Mobile optimized) */}
       <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 p-4 md:p-8 text-white shadow-lg mb-6 md:mb-8">
         <div className="relative z-10 flex flex-col items-start gap-3 md:gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -69,7 +69,7 @@ const Index = () => {
               You have <span className="font-bold text-white">{stats.upcomingCount} deadlines</span> this week and <span className="font-bold text-white">₹{stats.pendingAmount.toLocaleString()}</span> in pending payments.
             </p>
           </div>
-          <Button 
+          <Button
             onClick={() => navigate('/collaborations')}
             className="whitespace-nowrap bg-white text-indigo-600 hover:bg-indigo-50 font-semibold shadow-md transition-all hover:scale-105 text-sm md:text-base"
             size="sm"
@@ -77,7 +77,7 @@ const Index = () => {
             Add New Collab <ArrowUpRight className="ml-2 w-3 h-3 md:w-4 md:h-4" />
           </Button>
         </div>
-        
+
         {/* Decorative Circles - hidden on mobile */}
         <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-white/10 blur-3xl hidden md:block" />
         <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-indigo-900/20 blur-3xl hidden md:block" />
@@ -95,7 +95,7 @@ const Index = () => {
           title="Pending Income"
           value={`₹${stats.pendingAmount.toLocaleString()}`}
           subtitle="Invoices sent"
-          icon={<DollarSign className="w-5 h-5" />}
+          icon={<IndianRupee className="w-5 h-5" />}
         />
         <StatsCard
           title="Upcoming"
@@ -115,33 +115,33 @@ const Index = () => {
 
       {/* 📉 3. MAIN CONTENT GRID (Mobile: 1 col, Desktop: 2 col with 2/1 ratio) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        
+
         {/* Left: Charts (Mobile: full width, Desktop: 2/3 width) */}
         <div className="lg:col-span-2 flex flex-col gap-4 md:gap-6">
           <EarningsChart data={allCollabs} />
-          
+
           {/* Recent Collabs */}
           <RecentCollaborations data={allCollabs} />
         </div>
 
         {/* Right: Deadlines & Quick Stats (Mobile: full width, Desktop: 1/3 width) */}
         <div className="flex flex-col gap-4 md:gap-6">
-           <UpcomingDeadlines data={allCollabs} />
-           
-           {/* Mini "Quick Stats" Card */}
-           <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-slate-100 p-4 md:p-6 rounded-xl md:rounded-2xl shadow-lg">
-              <h3 className="font-semibold text-base md:text-lg mb-3 md:mb-4">Quick Stats</h3>
-              <div className="space-y-3 md:space-y-4">
-                 <div className="flex justify-between items-center pb-2 md:pb-3 border-b border-slate-700">
-                    <span className="text-slate-400 text-xs md:text-sm">Completed Deals</span>
-                    <span className="font-bold text-sm md:text-base">{stats.completedCount}</span>
-                 </div>
-                 <div className="flex justify-between items-center pb-2 md:pb-3 border-b border-slate-700">
-                    <span className="text-slate-400 text-xs md:text-sm">Avg. Deal Size</span>
-                    <span className="font-bold text-sm md:text-base">₹{stats.completedCount > 0 ? Math.round(stats.pendingAmount/stats.completedCount).toLocaleString() : 0}</span>
-                 </div>
+          <UpcomingDeadlines data={allCollabs} />
+
+          {/* Mini "Quick Stats" Card */}
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-slate-100 p-4 md:p-6 rounded-xl md:rounded-2xl shadow-lg">
+            <h3 className="font-semibold text-base md:text-lg mb-3 md:mb-4">Quick Stats</h3>
+            <div className="space-y-3 md:space-y-4">
+              <div className="flex justify-between items-center pb-2 md:pb-3 border-b border-slate-700">
+                <span className="text-slate-400 text-xs md:text-sm">Completed Deals</span>
+                <span className="font-bold text-sm md:text-base">{stats.completedCount}</span>
               </div>
-           </div>
+              <div className="flex justify-between items-center pb-2 md:pb-3 border-b border-slate-700">
+                <span className="text-slate-400 text-xs md:text-sm">Avg. Deal Size</span>
+                <span className="font-bold text-sm md:text-base">₹{stats.completedCount > 0 ? Math.round(stats.pendingAmount / stats.completedCount).toLocaleString() : 0}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
       </div>
