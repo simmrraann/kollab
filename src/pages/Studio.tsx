@@ -1,20 +1,22 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Plus, X, Trash2, Sparkles, Palette, StickyNote } from 'lucide-react';
+import { Plus, X, Trash2, Sparkles, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 // --- TYPES ---
 type NoteColor = 'yellow' | 'pink' | 'blue' | 'green' | 'purple' | 'orange';
 
 interface Note {
-  id: number;
+  id: string | number; // UUID from Supabase or temp number for new notes
   title: string;
   content: string;
   color: NoteColor;
+  user_id?: string;
 }
 
-// --- CONFIG: Hardcoded Pastels (Always Light, Text Always Dark) ---
+// --- CONFIG: Aesthetic Pastels ---
 const NOTE_THEMES: { [key in NoteColor]: string } = {
   yellow: 'bg-[#fff7b1] border-[#eadd78] text-slate-800 placeholder:text-slate-800/50',
   pink:   'bg-[#ffd6e8] border-[#eeb7d2] text-slate-800 placeholder:text-slate-800/50',
@@ -24,25 +26,104 @@ const NOTE_THEMES: { [key in NoteColor]: string } = {
   orange: 'bg-[#ffedd5] border-[#fed7aa] text-slate-800 placeholder:text-slate-800/50',
 };
 
-// Sticker Pack
 const STICKERS = ['🔥', '💡', '✅', '🚀', '❤️', '⭐', '👀', '📌', '💰', '📅'];
 
-// Mock Data
-const initialNotes: Note[] = [
-  { id: 1, title: 'Matiks Reel Script', content: 'Hook: Stop studying hard... \n\nScene 1: Show messy desk.\nScene 2: Show AI tool.', color: 'yellow' },
-  { id: 2, title: 'November Goals', content: '1. Hit 10k followers 🚀\n2. Launch Kollab\n3. Post 5 Reels/week', color: 'pink' },
-];
-
 export default function Studio() {
-  const [notes, setNotes] = useState<Note[]>(initialNotes);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [currentNote, setCurrentNote] = useState<Note | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Ref for the textarea to insert emojis at cursor position
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  // --- HANDLERS ---
-  
+  // --- 1. LOAD NOTES ON MOUNT ---
+  useEffect(() => {
+    const fetchNotes = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast.error("Vibe check failed: Couldn't load notes");
+      } else {
+        setNotes(data || []);
+      }
+      setIsLoading(false);
+    };
+
+    fetchNotes();
+  }, []);
+
+  // --- 2. SAVE LOGIC (INSERT OR UPDATE) ---
+  const handleSave = async () => {
+    if (!currentNote) return;
+    if (!currentNote.title.trim() && !currentNote.content.trim()) {
+      setIsEditorOpen(false);
+      return;
+    }
+
+    const notePayload = {
+      title: currentNote.title,
+      content: currentNote.content,
+      color: currentNote.color,
+    };
+
+    // If ID is a number, it's a temp local ID -> Perform INSERT
+    if (typeof currentNote.id === 'number') {
+      const { data, error } = await supabase
+        .from('notes')
+        .insert([notePayload])
+        .select();
+
+      if (error) {
+        toast.error("Failed to save to cloud");
+      } else {
+        setNotes([data[0], ...notes]);
+        toast.success("Note pinned to cloud! ✨");
+      }
+    } else {
+      // ID is a UUID -> Perform UPDATE
+      const { error } = await supabase
+        .from('notes')
+        .update(notePayload)
+        .eq('id', currentNote.id);
+
+      if (error) {
+        toast.error("Failed to update note");
+      } else {
+        setNotes(notes.map((n) => (n.id === currentNote.id ? { ...n, ...notePayload } : n)));
+        toast.success("Note updated!");
+      }
+    }
+
+    setIsEditorOpen(false);
+  };
+
+  // --- 3. DELETE LOGIC ---
+  const handleDelete = async () => {
+    if (!currentNote) return;
+
+    // If it's a real note in Supabase (UUID), delete it there
+    if (typeof currentNote.id === 'string') {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', currentNote.id);
+
+      if (error) {
+        toast.error("Couldn't delete from cloud");
+        return;
+      }
+    }
+
+    setNotes((prev) => prev.filter((n) => n.id !== currentNote.id));
+    toast.success("Note vanished.");
+    setIsEditorOpen(false);
+  };
+
+  // --- UI HELPERS ---
   const handleOpenNew = () => {
     setCurrentNote({ id: Date.now(), title: '', content: '', color: 'yellow' });
     setIsEditorOpen(true);
@@ -53,49 +134,16 @@ export default function Studio() {
     setIsEditorOpen(true);
   };
 
-  const handleSave = () => {
-    if (!currentNote) return;
-    if (!currentNote.title.trim() && !currentNote.content.trim()) {
-      setIsEditorOpen(false);
-      return;
-    }
-
-    setNotes((prev) => {
-      const exists = prev.find((n) => n.id === currentNote.id);
-      if (exists) {
-        return prev.map((n) => (n.id === currentNote.id ? currentNote : n));
-      } else {
-        return [currentNote, ...prev];
-      }
-    });
-
-    toast.success("Note saved!");
-    setIsEditorOpen(false);
-  };
-
-  const handleDelete = () => {
-    if (!currentNote) return;
-    setNotes((prev) => prev.filter((n) => n.id !== currentNote.id));
-    toast.success("Note deleted.");
-    setIsEditorOpen(false);
-  };
-
   const updateField = (field: keyof Note, value: any) => {
     if (currentNote) {
       setCurrentNote({ ...currentNote, [field]: value });
     }
   };
 
-  // Insert Emoji into Textarea logic
   const insertSticker = (sticker: string) => {
     if (!currentNote) return;
-    
-    // Simple append for now to ensure it works reliably
-    // (If you want perfect cursor insertion, we can add that complex logic, but append is safer)
     const newContent = currentNote.content + " " + sticker;
     updateField('content', newContent);
-    
-    // Auto-focus back to textarea
     setTimeout(() => textAreaRef.current?.focus(), 0);
   };
 
@@ -114,30 +162,37 @@ export default function Studio() {
       </div>
 
       {/* Grid Layout */}
-      <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 pb-20">
-        <div 
-          onClick={handleOpenNew}
-          className="break-inside-avoid p-6 rounded-3xl border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center min-h-[180px] text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all cursor-pointer group"
-        >
-           <div className="w-12 h-12 rounded-full bg-secondary group-hover:bg-primary/10 flex items-center justify-center mb-3 transition-colors">
-             <Plus className="w-6 h-6" />
-           </div>
-           <span className="font-medium">Create Note</span>
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 opacity-40">
+           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+           <p className="italic">Fetching your ideas...</p>
         </div>
+      ) : (
+        <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 pb-20">
+          <div 
+            onClick={handleOpenNew}
+            className="break-inside-avoid p-6 rounded-3xl border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center min-h-[180px] text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all cursor-pointer group"
+          >
+             <div className="w-12 h-12 rounded-full bg-secondary group-hover:bg-primary/10 flex items-center justify-center mb-3 transition-colors">
+               <Plus className="w-6 h-6" />
+             </div>
+             <span className="font-medium">Create Note</span>
+          </div>
 
-        {notes.map((note) => (
-           <div 
-             key={note.id} 
-             onClick={() => handleOpenEdit(note)}
-             className={`break-inside-avoid p-5 rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group relative ${NOTE_THEMES[note.color]}`}
-           >
-              <h3 className="font-bold text-lg mb-2 leading-tight">{note.title || 'Untitled'}</h3>
-              <p className="text-sm whitespace-pre-wrap font-medium leading-relaxed opacity-80 line-clamp-6">
-                 {note.content || <span className="opacity-40 italic">Empty note...</span>}
-              </p>
-           </div>
-        ))}
-      </div>
+          {notes.map((note) => (
+             <div 
+               key={note.id} 
+               onClick={() => handleOpenEdit(note)}
+               className={`break-inside-avoid p-5 rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group relative ${NOTE_THEMES[note.color as NoteColor]}`}
+             >
+                <h3 className="font-bold text-lg mb-2 leading-tight">{note.title || 'Untitled'}</h3>
+                <p className="text-sm whitespace-pre-wrap font-medium leading-relaxed opacity-80 line-clamp-6">
+                   {note.content || <span className="opacity-40 italic">Empty note...</span>}
+                </p>
+             </div>
+          ))}
+        </div>
+      )}
 
       {/* --- EDITOR MODAL --- */}
       {isEditorOpen && currentNote && (
@@ -156,14 +211,12 @@ export default function Studio() {
                     </Button>
                  </div>
                  <Button onClick={handleSave} className="rounded-full px-6 bg-slate-900 text-white hover:bg-slate-800 border-none">
-                    Save
+                    Save to Cloud
                  </Button>
               </div>
 
               {/* Tools */}
               <div className="px-6 py-3 flex flex-wrap gap-4 items-center border-b border-black/5 bg-white/10">
-                 
-                 {/* Color Picker */}
                  <div className="flex items-center gap-3 bg-white/40 px-3 py-1.5 rounded-full">
                     <Palette className="w-4 h-4 text-slate-600" />
                     <div className="flex gap-1">
@@ -177,14 +230,12 @@ export default function Studio() {
                     </div>
                  </div>
 
-                 {/* Sticker Picker */}
                  <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hide no-scrollbar">
                     {STICKERS.map(sticker => (
                       <button
                         key={sticker}
                         onClick={() => insertSticker(sticker)}
                         className="text-xl hover:scale-125 transition-transform cursor-pointer p-1"
-                        title="Add Sticker"
                       >
                         {sticker}
                       </button>
@@ -198,27 +249,26 @@ export default function Studio() {
                    value={currentNote.title}
                    onChange={(e) => updateField('title', e.target.value)}
                    placeholder="Title your note..."
-                   className={`w-full bg-transparent text-3xl font-bold border-none outline-none ${NOTE_THEMES[currentNote.color]}`}
+                   className="w-full bg-transparent text-3xl font-bold border-none outline-none"
                  />
                  <textarea 
                    ref={textAreaRef}
                    value={currentNote.content}
                    onChange={(e) => updateField('content', e.target.value)}
                    placeholder="Start typing..."
-                   className={`w-full h-full min-h-[300px] bg-transparent text-lg leading-relaxed border-none outline-none resize-none whitespace-pre-wrap ${NOTE_THEMES[currentNote.color]}`}
+                   className="w-full h-full min-h-[300px] bg-transparent text-lg leading-relaxed border-none outline-none resize-none whitespace-pre-wrap"
                    spellCheck={false}
                  />
               </div>
 
               {/* Footer */}
-              <div className="p-3 text-center text-xs text-slate-800/40 font-medium">
-                 {currentNote.content.length} characters
+              <div className="p-3 text-center text-xs text-slate-800/40 font-medium bg-black/5">
+                 {currentNote.content.length} characters • All data is private to your account
               </div>
 
            </div>
         </div>
       )}
-
     </AppLayout>
   );
 }
